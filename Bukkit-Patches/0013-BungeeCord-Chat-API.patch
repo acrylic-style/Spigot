@@ -1,11 +1,11 @@
-From b3ebfbe086f7c3e7130f5badfee718b6982ba5fc Mon Sep 17 00:00:00 2001
+From 16c348e51e0450d683165557d67e8dbcd79f03bf Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 13 Dec 2014 02:59:14 +0100
 Subject: [PATCH] BungeeCord Chat API
 
 
 diff --git a/pom.xml b/pom.xml
-index a4925fb9..e096e95e 100644
+index dff030bd..01d1a779 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -71,6 +71,13 @@
@@ -22,7 +22,7 @@ index a4925fb9..e096e95e 100644
          <dependency>
              <groupId>org.yaml</groupId>
              <artifactId>snakeyaml</artifactId>
-@@ -191,6 +198,7 @@
+@@ -192,6 +199,7 @@
                          <link>https://guava.dev/releases/21.0/api/docs/</link>
                          <link>https://javadoc.io/doc/org.yaml/snakeyaml/1.26/</link>
                          <link>https://javadoc.io/doc/org.jetbrains/annotations-java5/19.0.0/</link>
@@ -370,7 +370,7 @@ index 6d9708dc..ac772bf3 100644
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index a00880dd..40345617 100644
+index 6bb4cd00..82fde1dc 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -1,6 +1,7 @@
@@ -381,7 +381,7 @@ index a00880dd..40345617 100644
  import org.bukkit.DyeColor;
  import org.bukkit.Effect;
  import org.bukkit.GameMode;
-@@ -1339,6 +1340,58 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1414,6 +1415,58 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          public java.util.Set<Player> getHiddenPlayers() {
              throw new UnsupportedOperationException("Not supported yet.");
          }
@@ -524,5 +524,5 @@ index f740bebe..94852d50 100644
  
      @NotNull
 -- 
-2.25.1
+2.21.0.windows.1
 

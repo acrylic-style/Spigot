@@ -1,0 +1,183 @@
+From cd244685a10cc65a4e739812f3a3488844466ed9 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Aug 2014 18:12:32 -0400
+Subject: [PATCH] Limit TNT Detonations per tick
+
+This gives a per-world control on how much TNT will be processed per-tick,
+preventing a massive TNT detonation from lagging out the server.
+
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+new file mode 100644
+index 00000000..f11e7fe9
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -0,0 +1,125 @@
++package net.minecraft.server;
++
++import javax.annotation.Nullable;
++import org.bukkit.event.entity.ExplosionPrimeEvent; // CraftBukkit
++
++public class EntityTNTPrimed extends Entity {
++
++    private static final DataWatcherObject<Integer> FUSE_TICKS = DataWatcher.a(EntityTNTPrimed.class, DataWatcherRegistry.b);
++    @Nullable
++    public EntityLiving source;
++    public float yield = 4; // CraftBukkit - add field
++    public boolean isIncendiary = false; // CraftBukkit - add field
++
++    public EntityTNTPrimed(EntityTypes<? extends EntityTNTPrimed> entitytypes, World world) {
++        super(entitytypes, world);
++        this.i = true;
++    }
++
++    public EntityTNTPrimed(World world, double d0, double d1, double d2, @Nullable EntityLiving entityliving) {
++        this(EntityTypes.TNT, world);
++        this.setPosition(d0, d1, d2);
++        double d3 = world.random.nextDouble() * 6.2831854820251465D;
++
++        this.setMot(-Math.sin(d3) * 0.02D, 0.20000000298023224D, -Math.cos(d3) * 0.02D);
++        this.setFuseTicks(80);
++        this.lastX = d0;
++        this.lastY = d1;
++        this.lastZ = d2;
++        this.source = entityliving;
++    }
++
++    @Override
++    protected void initDatawatcher() {
++        this.datawatcher.register(EntityTNTPrimed.FUSE_TICKS, 80);
++    }
++
++    @Override
++    protected boolean playStepSound() {
++        return false;
++    }
++
++    @Override
++    public boolean isInteractable() {
++        return !this.cW();
++    }
++
++    @Override
++    public void tick() {
++        if (world.spigotConfig.currentPrimedTnt++ > world.spigotConfig.maxTntTicksPerTick) { return; } // Spigot
++        if (!this.isNoGravity()) {
++            this.setMot(this.getMot().add(0.0D, -0.04D, 0.0D));
++        }
++
++        this.move(EnumMoveType.SELF, this.getMot());
++        this.setMot(this.getMot().a(0.98D));
++        if (this.onGround) {
++            this.setMot(this.getMot().d(0.7D, -0.5D, 0.7D));
++        }
++
++        int i = this.getFuseTicks() - 1;
++
++        this.setFuseTicks(i);
++        if (i <= 0) {
++            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
++            // this.ab();
++            if (!this.world.isClientSide) {
++                this.explode();
++            }
++            this.ab();
++            // CraftBukkit end
++        } else {
++            this.aM();
++            if (this.world.isClientSide) {
++                this.world.addParticle(Particles.SMOKE, this.locX(), this.locY() + 0.5D, this.locZ(), 0.0D, 0.0D, 0.0D);
++            }
++        }
++
++    }
++
++    private void explode() {
++        // CraftBukkit start
++        // float f = 4.0F;
++
++        ExplosionPrimeEvent event = new ExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
++        this.world.getServer().getPluginManager().callEvent(event);
++
++        if (!event.isCancelled()) {
++            this.world.createExplosion(this, this.locX(), this.e(0.0625D), this.locZ(), event.getRadius(), event.getFire(), Explosion.Effect.BREAK);
++        }
++        // CraftBukkit end
++    }
++
++    @Override
++    protected void saveData(NBTTagCompound nbttagcompound) {
++        nbttagcompound.setShort("Fuse", (short) this.getFuseTicks());
++    }
++
++    @Override
++    protected void loadData(NBTTagCompound nbttagcompound) {
++        this.setFuseTicks(nbttagcompound.getShort("Fuse"));
++    }
++
++    @Nullable
++    public EntityLiving getSource() {
++        return this.source;
++    }
++
++    @Override
++    protected float getHeadHeight(EntityPose entitypose, EntitySize entitysize) {
++        return 0.15F;
++    }
++
++    public void setFuseTicks(int i) {
++        this.datawatcher.set(EntityTNTPrimed.FUSE_TICKS, i);
++    }
++
++    public int getFuseTicks() {
++        return (Integer) this.datawatcher.get(EntityTNTPrimed.FUSE_TICKS);
++    }
++
++    @Override
++    public Packet<?> P() {
++        return new PacketPlayOutSpawnEntity(this);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 718dcc0f..2d822afc 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -372,7 +372,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+             }
+ 
+             if (flag) {
+-                TileEntity tileentity = iblockdata.getBlock().isTileEntity() ? this.getTileEntity(blockposition) : null;
++                TileEntity tileentity = iblockdata.isTileEntity() ? this.getTileEntity(blockposition) : null;
+ 
+                 Block.dropItems(iblockdata, this, blockposition, tileentity, entity, ItemStack.b);
+             }
+@@ -585,6 +585,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         this.tickingTileEntities = false;
+         gameprofilerfiller.exit();
+         timings.tileEntityTick.stopTiming(); // Spigot
++        spigotConfig.currentPrimedTnt = 0; // Spigot
+     }
+ 
+     public <T extends Entity> void a(Consumer<T> consumer, T t0) {
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 3124a892..2ddacd71 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -333,4 +333,15 @@ public class SpigotWorldConfig
+         sprintMultiplier = (float) getDouble( "hunger.sprint-multiplier", 0.1 );
+         otherMultiplier = (float) getDouble( "hunger.other-multiplier", 0.0 );
+     }
++
++    public int currentPrimedTnt = 0;
++    public int maxTntTicksPerTick;
++    private void maxTntPerTick() {
++        if ( SpigotConfig.version < 7 )
++        {
++            set( "max-tnt-per-tick", 100 );
++        }
++        maxTntTicksPerTick = getInt( "max-tnt-per-tick", 100 );
++        log( "Max TNT Explosions: " + maxTntTicksPerTick );
++    }
+ }
+-- 
+2.21.0.windows.1
+

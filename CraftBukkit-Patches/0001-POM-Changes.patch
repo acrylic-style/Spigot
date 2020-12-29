@@ -1,4 +1,4 @@
-From c3deb7868ba232b349abd0282cb24bb3a72c78d7 Mon Sep 17 00:00:00 2001
+From 10ef281cebaa6e2018e13509f368f33bab8190b4 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Tue, 2 Jul 2013 13:07:39 +1000
 Subject: [PATCH] POM Changes
@@ -6,10 +6,10 @@ Subject: [PATCH] POM Changes
 Basic changes to the build system which mark the artifact as Spigot, and the necessary code changes to ensure proper functionality. Also disables the auto updater provided by CraftBukkit as it is useless to us.
 
 diff --git a/pom.xml b/pom.xml
-index 755be3124..185aa4759 100644
+index 636edd1b..a3756dd0 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -1,11 +1,11 @@
+@@ -1,17 +1,12 @@
  <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
      <modelVersion>4.0.0</modelVersion>
@@ -18,13 +18,19 @@ index 755be3124..185aa4759 100644
 +    <groupId>org.spigotmc</groupId>
 +    <artifactId>spigot</artifactId>
      <packaging>jar</packaging>
-     <version>1.16.4-R0.1-SNAPSHOT</version>
+     <version>1.17-R0.1-SNAPSHOT</version>
 -    <name>CraftBukkit</name>
 +    <name>Spigot</name>
      <url>https://www.spigotmc.org/</url>
+-    <parent>
+-        <artifactId>craftbukkit-parent</artifactId>
+-        <groupId>xyz.acrylicstyle</groupId>
+-        <version>dev-SNAPSHOT</version>
+-    </parent>
  
      <properties>
-@@ -18,10 +18,17 @@
+         <skipTests>true</skipTests>
+@@ -23,10 +18,17 @@
          <maven.compiler.target>1.8</maven.compiler.target>
      </properties>
  
@@ -44,7 +50,7 @@ index 755be3124..185aa4759 100644
              <version>${project.version}</version>
              <scope>compile</scope>
          </dependency>
-@@ -110,11 +117,26 @@
+@@ -120,11 +122,26 @@
                  <groupId>net.md-5</groupId>
                  <artifactId>scriptus</artifactId>
                  <version>0.4.1</version>
@@ -74,7 +80,7 @@ index 755be3124..185aa4759 100644
                          <phase>initialize</phase>
                          <goals>
                              <goal>describe</goal>
-@@ -134,7 +156,7 @@
+@@ -144,7 +161,7 @@
                          <manifestEntries>
                              <Main-Class>org.bukkit.craftbukkit.Main</Main-Class>
                              <Implementation-Title>CraftBukkit</Implementation-Title>
@@ -84,7 +90,7 @@ index 755be3124..185aa4759 100644
                              <Specification-Title>Bukkit</Specification-Title>
                              <Specification-Version>${api.version}</Specification-Version>
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-index f905d17b6..93046379d 100644
+index f905d17b..93046379 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 @@ -11,7 +11,7 @@ public final class Versioning {
@@ -97,5 +103,5 @@ index f905d17b6..93046379d 100644
  
          if (stream != null) {
 -- 
-2.25.1
+2.21.0.windows.1
 

@@ -1,4 +1,4 @@
-From 2c4b67d45417f3b40ffb425ddda1239e4230249e Mon Sep 17 00:00:00 2001
+From 0f2d4d2733f136831e1f09e2604071639becf00b Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 20 Feb 2015 21:39:31 +1100
 Subject: [PATCH] Allow Capping (Tile)Entity Tick Time.
@@ -10,10 +10,10 @@ For tiles there is very little tradeoff for this option, as tile ticks are based
 This feature was commisioned by Chunkr.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9f0a158e1..169822482 100644
+index 2d822afc..ec930394 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -79,6 +79,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -76,6 +76,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPosition lastPhysicsProblem; // Spigot
@@ -23,7 +23,7 @@ index 9f0a158e1..169822482 100644
  
      public CraftWorld getWorld() {
          return this.world;
-@@ -159,6 +162,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -156,6 +159,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          });
          // CraftBukkit end
          timings = new SpigotTimings.WorldTimingsHandler(this); // Spigot - code below can generate new world and access timings
@@ -32,45 +32,8 @@ index 9f0a158e1..169822482 100644
      }
  
      @Override
-@@ -608,14 +613,19 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         }
- 
-         this.tickingTileEntities = true;
--        Iterator iterator = this.tileEntityListTick.iterator();
--
--        while (iterator.hasNext()) {
--            TileEntity tileentity = (TileEntity) iterator.next();
-+        // Spigot start
-+        // Iterator iterator = this.tileEntityListTick.iterator();
-+        int tilesThisCycle = 0;
-+        for (tileLimiter.initTick();
-+                tilesThisCycle < tileEntityListTick.size() && (tilesThisCycle % 10 != 0 || tileLimiter.shouldContinue());
-+                tileTickPosition++, tilesThisCycle++) {
-+            tileTickPosition = (tileTickPosition < tileEntityListTick.size()) ? tileTickPosition : 0;
-+            TileEntity tileentity = (TileEntity) this.tileEntityListTick.get(tileTickPosition);
-             // Spigot start
-             if (tileentity == null) {
-                 getServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
--                iterator.remove();
-+                tilesThisCycle--;
-+                this.tileEntityListTick.remove(tileTickPosition--);
-                 continue;
-             }
-             // Spigot end
-@@ -652,7 +662,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-             }
- 
-             if (tileentity.isRemoved()) {
--                iterator.remove();
-+                // Spigot start
-+                tilesThisCycle--;
-+                this.tileEntityListTick.remove(tileTickPosition--);
-+                // Spigot end
-                 this.tileEntityList.remove(tileentity);
-                 if (this.isLoaded(tileentity.getPosition())) {
-                     this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 9fccf71ec..3ebe4de4a 100644
+index 9fccf71e..3ebe4de4 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -350,4 +350,13 @@ public class SpigotWorldConfig
@@ -89,7 +52,7 @@ index 9fccf71ec..3ebe4de4a 100644
  }
 diff --git a/src/main/java/org/spigotmc/TickLimiter.java b/src/main/java/org/spigotmc/TickLimiter.java
 new file mode 100644
-index 000000000..23a39382b
+index 00000000..23a39382
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/TickLimiter.java
 @@ -0,0 +1,20 @@
@@ -114,5 +77,5 @@ index 000000000..23a39382b
 +    }
 +}
 -- 
-2.25.1
+2.21.0.windows.1
 

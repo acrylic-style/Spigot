@@ -1,19 +1,57 @@
-From e373af522bbfb187ddb722b3863c74b72fbc6061 Mon Sep 17 00:00:00 2001
+From dd34ae988c0a7916a7ae79fd7e378c74dfc40035 Mon Sep 17 00:00:00 2001
 From: Thinkofdeath <thethinkofdeath@gmail.com>
 Date: Sun, 20 Apr 2014 13:18:55 +0100
 Subject: [PATCH] Convert player skulls async
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemSkullPlayer.java b/src/main/java/net/minecraft/server/ItemSkullPlayer.java
-index c484b397f..28f1ce903 100644
---- a/src/main/java/net/minecraft/server/ItemSkullPlayer.java
+new file mode 100644
+index 00000000..2134ac27
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/ItemSkullPlayer.java
-@@ -40,8 +40,16 @@ public class ItemSkullPlayer extends ItemBlockWallable {
-         if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && !StringUtils.isBlank(nbttagcompound.getString("SkullOwner"))) {
-             GameProfile gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
- 
--            gameprofile = TileEntitySkull.b(gameprofile);
--            nbttagcompound.set("SkullOwner", GameProfileSerializer.serialize(new NBTTagCompound(), gameprofile));
+@@ -0,0 +1,67 @@
++package net.minecraft.server;
++
++import com.mojang.authlib.GameProfile;
++import java.util.UUID;
++import org.apache.commons.lang3.StringUtils;
++
++public class ItemSkullPlayer extends ItemBlockWallable {
++
++    public ItemSkullPlayer(Block block, Block block1, Info item_info) {
++        super(block, block1, item_info);
++    }
++
++    @Override
++    public IChatBaseComponent m(ItemStack itemstack) {
++        if (itemstack.a(Items.PLAYER_HEAD) && itemstack.hasTag()) {
++            String s = null;
++            NBTTagCompound nbttagcompound = itemstack.getTag();
++
++            if (nbttagcompound.hasKeyOfType("SkullOwner", 8)) {
++                s = nbttagcompound.getString("SkullOwner");
++            } else if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
++                NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("SkullOwner");
++
++                if (nbttagcompound1.hasKeyOfType("Name", 8)) {
++                    s = nbttagcompound1.getString("Name");
++                }
++            }
++
++            if (s != null) {
++                return new ChatMessage(this.getName() + ".named", new Object[]{s});
++            }
++        }
++
++        return super.m(itemstack);
++    }
++
++    @Override
++    public boolean b(NBTTagCompound nbttagcompound) {
++        super.b(nbttagcompound);
++        if (nbttagcompound.hasKeyOfType("SkullOwner", 8) && !StringUtils.isBlank(nbttagcompound.getString("SkullOwner"))) {
++            GameProfile gameprofile = new GameProfile((UUID) null, nbttagcompound.getString("SkullOwner"));
++
 +            // Spigot start
 +            TileEntitySkull.b(gameprofile, new com.google.common.base.Predicate<GameProfile>() {
 +
@@ -24,17 +62,30 @@ index c484b397f..28f1ce903 100644
 +                }
 +            }, false);
 +            // Spigot end
-             return true;
-         } else {
-             // CraftBukkit start
++            return true;
++        } else {
++            // CraftBukkit start
++            NBTTagList textures = nbttagcompound.getCompound("SkullOwner").getCompound("Properties").getList("textures", 10); // Safe due to method contracts
++            for (int i = 0; i < textures.size(); i++) {
++                if (textures.get(i) instanceof NBTTagCompound && !((NBTTagCompound) textures.get(i)).hasKeyOfType("Signature", 8) && ((NBTTagCompound) textures.get(i)).getString("Value").trim().isEmpty()) {
++                    nbttagcompound.remove("SkullOwner");
++                    break;
++                }
++            }
++            // CraftBukkit end
++            return false;
++        }
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 6cc7519d9..5528df3d0 100644
+index 6cc7519d..b947877a 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
-@@ -7,6 +7,23 @@ import com.mojang.authlib.properties.Property;
+@@ -7,7 +7,24 @@ import com.mojang.authlib.properties.Property;
  import java.util.UUID;
  import javax.annotation.Nullable;
  
+-public class TileEntitySkull extends TileEntity implements ITickable {
 +// Spigot start
 +import com.google.common.base.Predicate;
 +import com.google.common.cache.LoadingCache;
@@ -52,10 +103,11 @@ index 6cc7519d9..5528df3d0 100644
 +import java.util.concurrent.Callable;
 +// Spigot end
 +
- public class TileEntitySkull extends TileEntity implements ITickable {
++public class TileEntitySkull extends TileEntity {
  
      @Nullable
-@@ -17,6 +34,58 @@ public class TileEntitySkull extends TileEntity implements ITickable {
+     private static UserCache userCache;
+@@ -17,9 +34,61 @@ public class TileEntitySkull extends TileEntity implements ITickable {
      public GameProfile gameProfile;
      private int g;
      private boolean h;
@@ -112,9 +164,49 @@ index 6cc7519d9..5528df3d0 100644
 +            } );
 +    // Spigot end
  
-     public TileEntitySkull() {
-         super(TileEntityTypes.SKULL);
-@@ -90,34 +159,68 @@ public class TileEntitySkull extends TileEntity implements ITickable {
+-    public TileEntitySkull() {
+-        super(TileEntityTypes.SKULL);
++    public TileEntitySkull(BlockPosition blockposition, IBlockData iblockdata) {
++        super(TileEntityTypes.SKULL, blockposition, iblockdata);
+     }
+ 
+     public static void a(UserCache usercache) {
+@@ -44,8 +113,8 @@ public class TileEntitySkull extends TileEntity implements ITickable {
+     }
+ 
+     @Override
+-    public void load(IBlockData iblockdata, NBTTagCompound nbttagcompound) {
+-        super.load(iblockdata, nbttagcompound);
++    public void load(NBTTagCompound nbttagcompound) {
++        super.load(nbttagcompound);
+         if (nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
+             this.setGameProfile(GameProfileSerializer.deserialize(nbttagcompound.getCompound("SkullOwner")));
+         } else if (nbttagcompound.hasKeyOfType("ExtraType", 8)) {
+@@ -58,17 +127,12 @@ public class TileEntitySkull extends TileEntity implements ITickable {
+ 
+     }
+ 
+-    @Override
+-    public void tick() {
+-        IBlockData iblockdata = this.getBlock();
+-
+-        if (iblockdata.a(Blocks.DRAGON_HEAD) || iblockdata.a(Blocks.DRAGON_WALL_HEAD)) {
+-            if (this.world.isBlockIndirectlyPowered(this.position)) {
+-                this.h = true;
+-                ++this.g;
+-            } else {
+-                this.h = false;
+-            }
++    public static void a(World world, BlockPosition blockposition, IBlockData iblockdata, TileEntitySkull tileentityskull) {
++        if (world.isBlockIndirectlyPowered(blockposition)) {
++            tileentityskull.h = true;
++            ++tileentityskull.g;
++        } else {
++            tileentityskull.h = false;
+         }
+ 
+     }
+@@ -90,34 +154,67 @@ public class TileEntitySkull extends TileEntity implements ITickable {
      }
  
      private void f() {
@@ -196,13 +288,12 @@ index 6cc7519d9..5528df3d0 100644
 -            return gameprofile;
 +            callback.apply(gameprofile);
          }
-+
 +        return Futures.immediateFuture(gameprofile);
      }
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 55c86a893..e950b1957 100644
+index 55c86a89..e950b195 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 @@ -89,7 +89,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
@@ -216,5 +307,5 @@ index 55c86a893..e950b1957 100644
              tag.set(SKULL_OWNER.NBT, serializedProfile);
          }
 -- 
-2.25.1
+2.21.0.windows.1
 

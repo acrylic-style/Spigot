@@ -1,4 +1,4 @@
-From 00bb776c97424361b067a7533dca5dd01a5d436c Mon Sep 17 00:00:00 2001
+From 75621f0e0912b4042aaefa54fd598b444a8aa362 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Fri, 4 Jul 2014 13:28:45 +1000
 Subject: [PATCH] Further Seed Customisation
@@ -6,29 +6,253 @@ Subject: [PATCH] Further Seed Customisation
 Allow server admins that really want to to customise the seeds used in world generation even further.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkGenerator.java b/src/main/java/net/minecraft/server/ChunkGenerator.java
-index 290540f81..9a6fef215 100644
---- a/src/main/java/net/minecraft/server/ChunkGenerator.java
+new file mode 100644
+index 00000000..48e028a8
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/ChunkGenerator.java
-@@ -150,6 +150,7 @@ public abstract class ChunkGenerator {
- 
-             return blockposition1;
-         } else {
+@@ -0,0 +1,393 @@
++package net.minecraft.server;
++
++import com.google.common.collect.Lists;
++import com.mojang.serialization.Codec;
++
++import javax.annotation.Nullable;
++import java.util.BitSet;
++import java.util.Iterator;
++import java.util.List;
++import java.util.ListIterator;
++import java.util.Random;
++import java.util.function.Function;
++import java.util.function.Supplier;
++
++public abstract class ChunkGenerator {
++
++    public static final Codec<ChunkGenerator> a;
++    protected final WorldChunkManager b;
++    protected final WorldChunkManager c;
++    private final StructureSettings structureSettings;
++    private final long e;
++    private final List<ChunkCoordIntPair> f;
++
++    public ChunkGenerator(WorldChunkManager worldchunkmanager, StructureSettings structuresettings) {
++        this(worldchunkmanager, worldchunkmanager, structuresettings, 0L);
++    }
++
++    public ChunkGenerator(WorldChunkManager worldchunkmanager, WorldChunkManager worldchunkmanager1, StructureSettings structuresettings, long i) {
++        this.f = Lists.newArrayList();
++        this.b = worldchunkmanager;
++        this.c = worldchunkmanager1;
++        this.structureSettings = structuresettings;
++        this.e = i;
++    }
++
++    private void g() {
++        if (this.f.isEmpty()) {
++            StructureSettingsStronghold structuresettingsstronghold = this.structureSettings.b();
++
++            if (structuresettingsstronghold != null && structuresettingsstronghold.c() != 0) {
++                List<BiomeBase> list = Lists.newArrayList();
++                Iterator iterator = this.b.b().iterator();
++
++                while (iterator.hasNext()) {
++                    BiomeBase biomebase = (BiomeBase) iterator.next();
++
++                    if (biomebase.e().a(StructureGenerator.STRONGHOLD)) {
++                        list.add(biomebase);
++                    }
++                }
++
++                int i = structuresettingsstronghold.a();
++                int j = structuresettingsstronghold.c();
++                int k = structuresettingsstronghold.b();
++                Random random = new Random();
++
++                random.setSeed(this.e);
++                double d0 = random.nextDouble() * 3.141592653589793D * 2.0D;
++                int l = 0;
++                int i1 = 0;
++
++                for (int j1 = 0; j1 < j; ++j1) {
++                    double d1 = (double) (4 * i + i * i1 * 6) + (random.nextDouble() - 0.5D) * (double) i * 2.5D;
++                    int k1 = (int) Math.round(Math.cos(d0) * d1);
++                    int l1 = (int) Math.round(Math.sin(d0) * d1);
++                    BlockPosition blockposition = this.b.a(SectionPosition.a(k1, 8), 0, SectionPosition.a(l1, 8), 112, list::contains, random);
++
++                    if (blockposition != null) {
++                        k1 = SectionPosition.a(blockposition.getX());
++                        l1 = SectionPosition.a(blockposition.getZ());
++                    }
++
++                    this.f.add(new ChunkCoordIntPair(k1, l1));
++                    d0 += 6.283185307179586D / (double) k;
++                    ++l;
++                    if (l == k) {
++                        ++i1;
++                        l = 0;
++                        k += 2 * k / (i1 + 1);
++                        k = Math.min(k, j - j1);
++                        d0 += random.nextDouble() * 3.141592653589793D * 2.0D;
++                    }
++                }
++
++            }
++        }
++    }
++
++    protected abstract Codec<? extends ChunkGenerator> a();
++
++    public void createBiomes(IRegistry<BiomeBase> iregistry, IChunkAccess ichunkaccess) {
++        ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
++
++        ((ProtoChunk) ichunkaccess).a(new BiomeStorage(iregistry, ichunkaccess, chunkcoordintpair, this.c));
++    }
++
++    public void doCarving(long i, BiomeManager biomemanager, IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
++        BiomeManager biomemanager1 = biomemanager.a(this.b);
++        SeededRandom seededrandom = new SeededRandom();
++        boolean flag = true;
++        ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
++        int j = chunkcoordintpair.x;
++        int k = chunkcoordintpair.z;
++        BiomeSettingsGeneration biomesettingsgeneration = this.b.getBiome(QuartPos.a(chunkcoordintpair.d()), 0, QuartPos.a(chunkcoordintpair.e())).e();
++        BitSet bitset = ((ProtoChunk) ichunkaccess).b(worldgenstage_features);
++
++        for (int l = j - 8; l <= j + 8; ++l) {
++            for (int i1 = k - 8; i1 <= k + 8; ++i1) {
++                List<Supplier<WorldGenCarverWrapper<?>>> list = biomesettingsgeneration.a(worldgenstage_features);
++                ListIterator listiterator = list.listIterator();
++
++                while (listiterator.hasNext()) {
++                    int j1 = listiterator.nextIndex();
++                    WorldGenCarverWrapper<?> worldgencarverwrapper = (WorldGenCarverWrapper) ((Supplier) listiterator.next()).get();
++
++                    seededrandom.c(i + (long) j1, l, i1);
++                    if (worldgencarverwrapper.a(seededrandom, l, i1)) {
++                        worldgencarverwrapper.a(ichunkaccess, biomemanager1::a, seededrandom, this.getSeaLevel(), l, i1, j, k, bitset);
++                    }
++                }
++            }
++        }
++
++    }
++
++    @Nullable
++    public BlockPosition findNearestMapFeature(WorldServer worldserver, StructureGenerator<?> structuregenerator, BlockPosition blockposition, int i, boolean flag) {
++        if (!this.b.a(structuregenerator)) {
++            return null;
++        } else if (structuregenerator == StructureGenerator.STRONGHOLD) {
++            this.g();
++            BlockPosition blockposition1 = null;
++            double d0 = Double.MAX_VALUE;
++            BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
++            Iterator iterator = this.f.iterator();
++
++            while (iterator.hasNext()) {
++                ChunkCoordIntPair chunkcoordintpair = (ChunkCoordIntPair) iterator.next();
++
++                blockposition_mutableblockposition.d(SectionPosition.a(chunkcoordintpair.x, 8), 32, SectionPosition.a(chunkcoordintpair.z, 8));
++                double d1 = blockposition_mutableblockposition.j(blockposition);
++
++                if (blockposition1 == null) {
++                    blockposition1 = new BlockPosition(blockposition_mutableblockposition);
++                    d0 = d1;
++                } else if (d1 < d0) {
++                    blockposition1 = new BlockPosition(blockposition_mutableblockposition);
++                    d0 = d1;
++                }
++            }
++
++            return blockposition1;
++        } else {
 +            updateStructureSettings(worldserver, structureSettings); // Spigot
-             StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structuregenerator);
- 
-             return structuresettingsfeature == null ? null : structuregenerator.getNearestGeneratedFeature(worldserver, worldserver.getStructureManager(), blockposition, i, flag, worldserver.getSeed(), structuresettingsfeature);
-@@ -227,6 +228,7 @@ public abstract class ChunkGenerator {
-     private void a(StructureFeature<?, ?> structurefeature, IRegistryCustom iregistrycustom, StructureManager structuremanager, IChunkAccess ichunkaccess, DefinedStructureManager definedstructuremanager, long i, ChunkCoordIntPair chunkcoordintpair, BiomeBase biomebase) {
-         StructureStart<?> structurestart = structuremanager.a(SectionPosition.a(ichunkaccess.getPos(), 0), structurefeature.d, ichunkaccess);
-         int j = structurestart != null ? structurestart.j() : 0;
++            StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structuregenerator);
++
++            return structuresettingsfeature == null ? null : structuregenerator.getNearestGeneratedFeature(worldserver, worldserver.getStructureManager(), blockposition, i, flag, worldserver.getSeed(), structuresettingsfeature);
++        }
++    }
++
++    public void addDecorations(RegionLimitedWorldAccess regionlimitedworldaccess, StructureManager structuremanager) {
++        int i = regionlimitedworldaccess.a();
++        int j = regionlimitedworldaccess.b();
++        int k = SectionPosition.c(i);
++        int l = SectionPosition.c(j);
++        BlockPosition blockposition = new BlockPosition(k, 0, l);
++        BiomeBase biomebase = this.b.e(i, j);
++        SeededRandom seededrandom = new SeededRandom();
++        long i1 = seededrandom.a(regionlimitedworldaccess.getSeed(), k, l);
++
++        try {
++            biomebase.a(structuremanager, this, regionlimitedworldaccess, i1, seededrandom, blockposition);
++        } catch (Exception exception) {
++            CrashReport crashreport = CrashReport.a(exception, "Biome decoration");
++
++            crashreport.a("Generation").a("CenterX", (Object) i).a("CenterZ", (Object) j).a("Seed", (Object) i1).a("Biome", (Object) biomebase);
++            throw new ReportedException(crashreport);
++        }
++    }
++
++    public abstract void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess);
++
++    public void addMobs(RegionLimitedWorldAccess regionlimitedworldaccess) {}
++
++    public StructureSettings getSettings() {
++        return this.structureSettings;
++    }
++
++    public int getSpawnHeight() {
++        return 64;
++    }
++
++    public WorldChunkManager getWorldChunkManager() {
++        return this.c;
++    }
++
++    public int getGenerationDepth() {
++        return 256;
++    }
++
++    public List<BiomeSettingsMobs.c> getMobsFor(BiomeBase biomebase, StructureManager structuremanager, EnumCreatureType enumcreaturetype, BlockPosition blockposition) {
++        return biomebase.b().a(enumcreaturetype);
++    }
++
++    public void createStructures(IRegistryCustom iregistrycustom, StructureManager structuremanager, IChunkAccess ichunkaccess, DefinedStructureManager definedstructuremanager, long i) {
++        ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
++        BiomeBase biomebase = this.b.e(chunkcoordintpair.x, chunkcoordintpair.z);
++
++        this.a(StructureFeatures.k, iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
++        Iterator iterator = biomebase.e().a().iterator();
++
++        while (iterator.hasNext()) {
++            Supplier<StructureFeature<?, ?>> supplier = (Supplier) iterator.next();
++
++            // CraftBukkit start
++            StructureFeature<?, ?> structurefeature = (StructureFeature) supplier.get();
++            if (structurefeature.c == StructureGenerator.STRONGHOLD) {
++                synchronized (structurefeature) {
++                    this.a(structurefeature, iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
++                }
++            } else {
++                this.a(structurefeature, iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
++            }
++            // CraftBukkit end
++        }
++
++    }
++
++    private void a(StructureFeature<?, ?> structurefeature, IRegistryCustom iregistrycustom, StructureManager structuremanager, IChunkAccess ichunkaccess, DefinedStructureManager definedstructuremanager, long i, ChunkCoordIntPair chunkcoordintpair, BiomeBase biomebase) {
++        StructureStart<?> structurestart = structuremanager.a(SectionPosition.a(ichunkaccess.getPos(), 0), structurefeature.d, ichunkaccess);
++        int j = structurestart != null ? structurestart.j() : 0;
 +        updateStructureSettings(structuremanager.getWorld(), structureSettings); // Spigot
-         StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structurefeature.d);
- 
-         if (structuresettingsfeature != null) {
-@@ -237,6 +239,83 @@ public abstract class ChunkGenerator {
- 
-     }
- 
++        StructureSettingsFeature structuresettingsfeature = this.structureSettings.a(structurefeature.d);
++
++        if (structuresettingsfeature != null) {
++            StructureStart<?> structurestart1 = structurefeature.a(iregistrycustom, this, this.b, definedstructuremanager, i, chunkcoordintpair, biomebase, j, structuresettingsfeature);
++
++            structuremanager.a(SectionPosition.a(ichunkaccess.getPos(), 0), structurefeature.d, structurestart1, ichunkaccess);
++        }
++
++    }
++
 +    // Spigot start
 +    private volatile boolean injected;
 +    private void updateStructureSettings(World world, StructureSettings settings) {
@@ -106,24 +330,603 @@ index 290540f81..9a6fef215 100644
 +    }
 +    // Spigot end
 +
-     public void storeStructures(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, IChunkAccess ichunkaccess) {
-         boolean flag = true;
-         int i = ichunkaccess.getPos().x;
++    public void storeStructures(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, IChunkAccess ichunkaccess) {
++        boolean flag = true;
++        int i = ichunkaccess.getPos().x;
++        int j = ichunkaccess.getPos().z;
++        int k = SectionPosition.c(i);
++        int l = SectionPosition.c(j);
++        SectionPosition sectionposition = SectionPosition.a(ichunkaccess.getPos(), 0);
++
++        for (int i1 = i - 8; i1 <= i + 8; ++i1) {
++            for (int j1 = j - 8; j1 <= j + 8; ++j1) {
++                long k1 = ChunkCoordIntPair.pair(i1, j1);
++                Iterator iterator = generatoraccessseed.getChunkAt(i1, j1).g().values().iterator();
++
++                while (iterator.hasNext()) {
++                    StructureStart structurestart = (StructureStart) iterator.next();
++
++                    try {
++                        if (structurestart != StructureStart.a && structurestart.c().a(k, l, k + 15, l + 15)) {
++                            structuremanager.a(sectionposition, structurestart.l(), k1, ichunkaccess);
++                            PacketDebug.a(generatoraccessseed, structurestart);
++                        }
++                    } catch (Exception exception) {
++                        CrashReport crashreport = CrashReport.a(exception, "Generating structure reference");
++                        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Structure");
++
++                        crashreportsystemdetails.a("Id", () -> {
++                            return IRegistry.STRUCTURE_FEATURE.getKey(structurestart.l()).toString();
++                        });
++                        crashreportsystemdetails.a("Name", () -> {
++                            return structurestart.l().i();
++                        });
++                        crashreportsystemdetails.a("Class", () -> {
++                            return structurestart.l().getClass().getCanonicalName();
++                        });
++                        throw new ReportedException(crashreport);
++                    }
++                }
++            }
++        }
++
++    }
++
++    public abstract void buildNoise(GeneratorAccess generatoraccess, StructureManager structuremanager, IChunkAccess ichunkaccess);
++
++    public int getSeaLevel() {
++        return 63;
++    }
++
++    public abstract int getBaseHeight(int i, int j, HeightMap.Type heightmap_type);
++
++    public abstract BlockColumn a(int i, int j);
++
++    public int b(int i, int j, HeightMap.Type heightmap_type) {
++        return this.getBaseHeight(i, j, heightmap_type);
++    }
++
++    public int c(int i, int j, HeightMap.Type heightmap_type) {
++        return this.getBaseHeight(i, j, heightmap_type) - 1;
++    }
++
++    public boolean a(ChunkCoordIntPair chunkcoordintpair) {
++        this.g();
++        return this.f.contains(chunkcoordintpair);
++    }
++
++    static {
++        // CraftBukkit start - decompile errors
++        IRegistry.a(IRegistry.CHUNK_GENERATOR, "noise", ChunkGeneratorAbstract.d);
++        IRegistry.a(IRegistry.CHUNK_GENERATOR, "flat", ChunkProviderFlat.d);
++        IRegistry.a(IRegistry.CHUNK_GENERATOR, "debug", ChunkProviderDebug.d);
++        // CraftBukkit end
++        a = IRegistry.CHUNK_GENERATOR.dispatchStable(ChunkGenerator::a, Function.identity());
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/EntitySlime.java b/src/main/java/net/minecraft/server/EntitySlime.java
-index 2b491bb0c..a737b9cae 100644
---- a/src/main/java/net/minecraft/server/EntitySlime.java
+new file mode 100644
+index 00000000..2176f1fc
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/EntitySlime.java
-@@ -285,7 +285,7 @@ public class EntitySlime extends EntityInsentient implements IMonster {
-             }
- 
-             ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(blockposition);
--            boolean flag = SeededRandom.a(chunkcoordintpair.x, chunkcoordintpair.z, ((GeneratorAccessSeed) generatoraccess).getSeed(), 987234911L).nextInt(10) == 0;
+@@ -0,0 +1,515 @@
++package net.minecraft.server;
++
++import java.util.EnumSet;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Random;
++import javax.annotation.Nullable;
++// CraftBukkit start
++import java.util.ArrayList;
++import java.util.List;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTransformEvent;
++import org.bukkit.event.entity.SlimeSplitEvent;
++// CraftBukkit end
++
++public class EntitySlime extends EntityInsentient implements IMonster {
++
++    private static final DataWatcherObject<Integer> bj = DataWatcher.a(EntitySlime.class, DataWatcherRegistry.b);
++    public float b;
++    public float c;
++    public float d;
++    private boolean bk;
++
++    public EntitySlime(EntityTypes<? extends EntitySlime> entitytypes, World world) {
++        super(entitytypes, world);
++        this.moveController = new ControllerMoveSlime(this);
++    }
++
++    @Override
++    protected void initPathfinder() {
++        this.goalSelector.a(1, new PathfinderGoalSlimeRandomJump(this));
++        this.goalSelector.a(2, new PathfinderGoalSlimeNearestPlayer(this));
++        this.goalSelector.a(3, new PathfinderGoalSlimeRandomDirection(this));
++        this.goalSelector.a(5, new PathfinderGoalSlimeIdle(this));
++        this.targetSelector.a(1, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, 10, true, false, (entityliving) -> {
++            return Math.abs(entityliving.locY() - this.locY()) <= 4.0D;
++        }));
++        this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityIronGolem.class, true));
++    }
++
++    @Override
++    protected void initDatawatcher() {
++        super.initDatawatcher();
++        this.datawatcher.register(EntitySlime.bj, 1);
++    }
++
++    public void setSize(int i, boolean flag) {
++        this.datawatcher.set(EntitySlime.bj, i);
++        this.af();
++        this.updateSize();
++        this.getAttributeInstance(GenericAttributes.MAX_HEALTH).setValue((double) (i * i));
++        this.getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue((double) (0.2F + 0.1F * (float) i));
++        this.getAttributeInstance(GenericAttributes.ATTACK_DAMAGE).setValue((double) i);
++        if (flag) {
++            this.setHealth(this.getMaxHealth());
++        }
++
++        this.f = i;
++    }
++
++    public int getSize() {
++        return (Integer) this.datawatcher.get(EntitySlime.bj);
++    }
++
++    @Override
++    public void saveData(NBTTagCompound nbttagcompound) {
++        super.saveData(nbttagcompound);
++        nbttagcompound.setInt("Size", this.getSize() - 1);
++        nbttagcompound.setBoolean("wasOnGround", this.bk);
++    }
++
++    @Override
++    public void loadData(NBTTagCompound nbttagcompound) {
++        int i = nbttagcompound.getInt("Size");
++
++        if (i < 0) {
++            i = 0;
++        }
++
++        this.setSize(i + 1, false);
++        super.loadData(nbttagcompound);
++        this.bk = nbttagcompound.getBoolean("wasOnGround");
++    }
++
++    public boolean fl() {
++        return this.getSize() <= 1;
++    }
++
++    protected ParticleParam fd() {
++        return Particles.ITEM_SLIME;
++    }
++
++    @Override
++    protected boolean L() {
++        return this.getSize() > 0;
++    }
++
++    @Override
++    public void tick() {
++        this.c += (this.b - this.c) * 0.5F;
++        this.d = this.c;
++        super.tick();
++        if (this.onGround && !this.bk) {
++            int i = this.getSize();
++
++            for (int j = 0; j < i * 8; ++j) {
++                float f = this.random.nextFloat() * 6.2831855F;
++                float f1 = this.random.nextFloat() * 0.5F + 0.5F;
++                float f2 = MathHelper.sin(f) * (float) i * 0.5F * f1;
++                float f3 = MathHelper.cos(f) * (float) i * 0.5F * f1;
++
++                this.world.addParticle(this.fd(), this.locX() + (double) f2, this.locY(), this.locZ() + (double) f3, 0.0D, 0.0D, 0.0D);
++            }
++
++            this.playSound(this.getSoundSquish(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
++            this.b = -0.5F;
++        } else if (!this.onGround && this.bk) {
++            this.b = 1.0F;
++        }
++
++        this.bk = this.onGround;
++        this.ff();
++    }
++
++    protected void ff() {
++        this.b *= 0.6F;
++    }
++
++    protected int fe() {
++        return this.random.nextInt(20) + 10;
++    }
++
++    @Override
++    public void updateSize() {
++        double d0 = this.locX();
++        double d1 = this.locY();
++        double d2 = this.locZ();
++
++        super.updateSize();
++        this.setPosition(d0, d1, d2);
++    }
++
++    @Override
++    public void a(DataWatcherObject<?> datawatcherobject) {
++        if (EntitySlime.bj.equals(datawatcherobject)) {
++            this.updateSize();
++            this.yaw = this.ax;
++            this.av = this.ax;
++            if (this.isInWater() && this.random.nextInt(20) == 0) {
++                this.aO();
++            }
++        }
++
++        super.a(datawatcherobject);
++    }
++
++    @Override
++    public EntityTypes<? extends EntitySlime> getEntityType() {
++        return (EntityTypes<? extends EntitySlime>) super.getEntityType(); // CraftBukkit - decompile error
++    }
++
++    @Override
++    public void a(RemovalReason entity_removalreason) {
++        int i = this.getSize();
++
++        if (!this.world.isClientSide && i > 1 && this.dG()) {
++            IChatBaseComponent ichatbasecomponent = this.getCustomName();
++            boolean flag = this.isNoAI();
++            float f = (float) i / 4.0F;
++            int j = i / 2;
++            int k = 2 + this.random.nextInt(3);
++
++            // CraftBukkit start
++            SlimeSplitEvent event = new SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), k);
++            this.world.getServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled() && event.getCount() > 0) {
++                k = event.getCount();
++            } else {
++                super.die();
++                return;
++            }
++            List<EntityLiving> slimes = new ArrayList<>(j);
++            // CraftBukkit end
++
++            for (int l = 0; l < k; ++l) {
++                float f1 = ((float) (l % 2) - 0.5F) * f;
++                float f2 = ((float) (l / 2) - 0.5F) * f;
++                EntitySlime entityslime = (EntitySlime) this.getEntityType().a(this.world);
++
++                if (this.isPersistent()) {
++                    entityslime.setPersistent();
++                }
++
++                entityslime.setCustomName(ichatbasecomponent);
++                entityslime.setNoAI(flag);
++                entityslime.setInvulnerable(this.isInvulnerable());
++                entityslime.setSize(j, true);
++                entityslime.setPositionRotation(this.locX() + (double) f1, this.locY() + 0.5D, this.locZ() + (double) f2, this.random.nextFloat() * 360.0F, 0.0F);
++                slimes.add(entityslime); // CraftBukkit
++            }
++
++            // CraftBukkit start
++            if (CraftEventFactory.callEntityTransformEvent(this, slimes, EntityTransformEvent.TransformReason.SPLIT).isCancelled()) {
++                return;
++            }
++            for (EntityLiving living : slimes) {
++                this.world.addEntity(living, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SLIME_SPLIT); // CraftBukkit - SpawnReason
++            }
++            // CraftBukkit end
++        }
++
++        super.a(entity_removalreason);
++    }
++
++    @Override
++    public void collide(Entity entity) {
++        super.collide(entity);
++        if (entity instanceof EntityIronGolem && this.fg()) {
++            this.j((EntityLiving) entity);
++        }
++
++    }
++
++    @Override
++    public void pickup(EntityHuman entityhuman) {
++        if (this.fg()) {
++            this.j((EntityLiving) entityhuman);
++        }
++
++    }
++
++    protected void j(EntityLiving entityliving) {
++        if (this.isAlive()) {
++            int i = this.getSize();
++
++            if (this.h((Entity) entityliving) < 0.6D * (double) i * 0.6D * (double) i && this.hasLineOfSight(entityliving) && entityliving.damageEntity(DamageSource.mobAttack(this), this.fh())) {
++                this.playSound(SoundEffects.SLIME_ATTACK, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
++                this.a((EntityLiving) this, (Entity) entityliving);
++            }
++        }
++
++    }
++
++    @Override
++    protected float b(EntityPose entitypose, EntitySize entitysize) {
++        return 0.625F * entitysize.height;
++    }
++
++    protected boolean fg() {
++        return !this.fl() && this.doAITick();
++    }
++
++    protected float fh() {
++        return (float) this.b(GenericAttributes.ATTACK_DAMAGE);
++    }
++
++    @Override
++    protected SoundEffect getSoundHurt(DamageSource damagesource) {
++        return this.fl() ? SoundEffects.SLIME_HURT_SMALL : SoundEffects.SLIME_HURT;
++    }
++
++    @Override
++    protected SoundEffect getSoundDeath() {
++        return this.fl() ? SoundEffects.SLIME_DEATH_SMALL : SoundEffects.SLIME_DEATH;
++    }
++
++    protected SoundEffect getSoundSquish() {
++        return this.fl() ? SoundEffects.SLIME_SQUISH_SMALL : SoundEffects.SLIME_SQUISH;
++    }
++
++    @Override
++    protected MinecraftKey getDefaultLootTable() {
++        return this.getSize() == 1 ? this.getEntityType().j() : LootTables.a;
++    }
++
++    public static boolean c(EntityTypes<EntitySlime> entitytypes, GeneratorAccess generatoraccess, EnumMobSpawn enummobspawn, BlockPosition blockposition, Random random) {
++        if (generatoraccess.getDifficulty() != EnumDifficulty.PEACEFUL) {
++            if (Objects.equals(generatoraccess.h(blockposition), Optional.of(Biomes.SWAMP)) && blockposition.getY() > 50 && blockposition.getY() < 70 && random.nextFloat() < 0.5F && random.nextFloat() < generatoraccess.ak() && generatoraccess.getLightLevel(blockposition) <= random.nextInt(8)) {
++                return a(entitytypes, generatoraccess, enummobspawn, blockposition, random);
++            }
++
++            if (!(generatoraccess instanceof GeneratorAccessSeed)) {
++                return false;
++            }
++
++            ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(blockposition);
 +            boolean flag = SeededRandom.a(chunkcoordintpair.x, chunkcoordintpair.z, ((GeneratorAccessSeed) generatoraccess).getSeed(), generatoraccess.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot
- 
-             if (random.nextInt(10) == 0 && flag && blockposition.getY() < 40) {
-                 return a(entitytypes, generatoraccess, enummobspawn, blockposition, random);
++
++            if (random.nextInt(10) == 0 && flag && blockposition.getY() < 40) {
++                return a(entitytypes, generatoraccess, enummobspawn, blockposition, random);
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    protected float getSoundVolume() {
++        return 0.4F * (float) this.getSize();
++    }
++
++    @Override
++    public int O() {
++        return 0;
++    }
++
++    protected boolean fm() {
++        return this.getSize() > 0;
++    }
++
++    @Override
++    protected void jump() {
++        Vec3D vec3d = this.getMot();
++
++        this.setMot(vec3d.x, (double) this.ee(), vec3d.z);
++        this.impulse = true;
++    }
++
++    @Nullable
++    @Override
++    public GroupDataEntity prepare(WorldAccess worldaccess, DifficultyDamageScaler difficultydamagescaler, EnumMobSpawn enummobspawn, @Nullable GroupDataEntity groupdataentity, @Nullable NBTTagCompound nbttagcompound) {
++        int i = this.random.nextInt(3);
++
++        if (i < 2 && this.random.nextFloat() < 0.5F * difficultydamagescaler.d()) {
++            ++i;
++        }
++
++        int j = 1 << i;
++
++        this.setSize(j, true);
++        return super.prepare(worldaccess, difficultydamagescaler, enummobspawn, groupdataentity, nbttagcompound);
++    }
++
++    private float m() {
++        float f = this.fl() ? 1.4F : 0.8F;
++
++        return ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) * f;
++    }
++
++    protected SoundEffect getSoundJump() {
++        return this.fl() ? SoundEffects.SLIME_JUMP_SMALL : SoundEffects.SLIME_JUMP;
++    }
++
++    @Override
++    public EntitySize a(EntityPose entitypose) {
++        return super.a(entitypose).a(0.255F * (float) this.getSize());
++    }
++
++    static class PathfinderGoalSlimeIdle extends PathfinderGoal {
++
++        private final EntitySlime a;
++
++        public PathfinderGoalSlimeIdle(EntitySlime entityslime) {
++            this.a = entityslime;
++            this.a(EnumSet.of(Type.JUMP, Type.MOVE));
++        }
++
++        @Override
++        public boolean a() {
++            return !this.a.isPassenger();
++        }
++
++        @Override
++        public void e() {
++            ((ControllerMoveSlime) this.a.getControllerMove()).a(1.0D);
++        }
++    }
++
++    static class PathfinderGoalSlimeRandomJump extends PathfinderGoal {
++
++        private final EntitySlime a;
++
++        public PathfinderGoalSlimeRandomJump(EntitySlime entityslime) {
++            this.a = entityslime;
++            this.a(EnumSet.of(Type.JUMP, Type.MOVE));
++            entityslime.getNavigation().d(true);
++        }
++
++        @Override
++        public boolean a() {
++            return (this.a.isInWater() || this.a.aS()) && this.a.getControllerMove() instanceof ControllerMoveSlime;
++        }
++
++        @Override
++        public void e() {
++            if (this.a.getRandom().nextFloat() < 0.8F) {
++                this.a.getControllerJump().jump();
++            }
++
++            ((ControllerMoveSlime) this.a.getControllerMove()).a(1.2D);
++        }
++    }
++
++    static class PathfinderGoalSlimeRandomDirection extends PathfinderGoal {
++
++        private final EntitySlime a;
++        private float b;
++        private int c;
++
++        public PathfinderGoalSlimeRandomDirection(EntitySlime entityslime) {
++            this.a = entityslime;
++            this.a(EnumSet.of(Type.LOOK));
++        }
++
++        @Override
++        public boolean a() {
++            return this.a.getGoalTarget() == null && (this.a.onGround || this.a.isInWater() || this.a.aS() || this.a.hasEffect(MobEffects.LEVITATION)) && this.a.getControllerMove() instanceof ControllerMoveSlime;
++        }
++
++        @Override
++        public void e() {
++            if (--this.c <= 0) {
++                this.c = 40 + this.a.getRandom().nextInt(60);
++                this.b = (float) this.a.getRandom().nextInt(360);
++            }
++
++            ((ControllerMoveSlime) this.a.getControllerMove()).a(this.b, false);
++        }
++    }
++
++    static class PathfinderGoalSlimeNearestPlayer extends PathfinderGoal {
++
++        private final EntitySlime a;
++        private int b;
++
++        public PathfinderGoalSlimeNearestPlayer(EntitySlime entityslime) {
++            this.a = entityslime;
++            this.a(EnumSet.of(Type.LOOK));
++        }
++
++        @Override
++        public boolean a() {
++            EntityLiving entityliving = this.a.getGoalTarget();
++
++            return entityliving == null ? false : (!entityliving.isAlive() ? false : (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).eX().isInvulnerable ? false : this.a.getControllerMove() instanceof ControllerMoveSlime));
++        }
++
++        @Override
++        public void c() {
++            this.b = 300;
++            super.c();
++        }
++
++        @Override
++        public boolean b() {
++            EntityLiving entityliving = this.a.getGoalTarget();
++
++            return entityliving == null ? false : (!entityliving.isAlive() ? false : (entityliving instanceof EntityHuman && ((EntityHuman) entityliving).eX().isInvulnerable ? false : --this.b > 0));
++        }
++
++        @Override
++        public void e() {
++            this.a.a((Entity) this.a.getGoalTarget(), 10.0F, 10.0F);
++            ((ControllerMoveSlime) this.a.getControllerMove()).a(this.a.yaw, this.a.fg());
++        }
++    }
++
++    static class ControllerMoveSlime extends ControllerMove {
++
++        private float i;
++        private int j;
++        private final EntitySlime k;
++        private boolean l;
++
++        public ControllerMoveSlime(EntitySlime entityslime) {
++            super(entityslime);
++            this.k = entityslime;
++            this.i = 180.0F * entityslime.yaw / 3.1415927F;
++        }
++
++        public void a(float f, boolean flag) {
++            this.i = f;
++            this.l = flag;
++        }
++
++        public void a(double d0) {
++            this.e = d0;
++            this.h = Operation.MOVE_TO;
++        }
++
++        @Override
++        public void a() {
++            this.a.yaw = this.a(this.a.yaw, this.i, 90.0F);
++            this.a.ax = this.a.yaw;
++            this.a.av = this.a.yaw;
++            if (this.h != Operation.MOVE_TO) {
++                this.a.t(0.0F);
++            } else {
++                this.h = Operation.WAIT;
++                if (this.a.isOnGround()) {
++                    this.a.q((float) (this.e * this.a.b(GenericAttributes.MOVEMENT_SPEED)));
++                    if (this.j-- <= 0) {
++                        this.j = this.k.fe();
++                        if (this.l) {
++                            this.j /= 3;
++                        }
++
++                        this.k.getControllerJump().jump();
++                        if (this.k.fm()) {
++                            this.k.playSound(this.k.getSoundJump(), this.k.getSoundVolume(), this.k.m());
++                        }
++                    } else {
++                        this.k.aM = 0.0F;
++                        this.k.aO = 0.0F;
++                        this.a.q(0.0F);
++                    }
++                } else {
++                    this.a.q((float) (this.e * this.a.b(GenericAttributes.MOVEMENT_SPEED)));
++                }
++
++            }
++        }
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/StructureManager.java b/src/main/java/net/minecraft/server/StructureManager.java
-index f5c5597b9..c434427ce 100644
+index f5c5597b..c434427c 100644
 --- a/src/main/java/net/minecraft/server/StructureManager.java
 +++ b/src/main/java/net/minecraft/server/StructureManager.java
 @@ -58,4 +58,10 @@ public class StructureManager {
@@ -138,7 +941,7 @@ index f5c5597b9..c434427ce 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/net/minecraft/server/StructureSettings.java b/src/main/java/net/minecraft/server/StructureSettings.java
-index 31176a5b5..212e606fb 100644
+index 31176a5b..212e606f 100644
 --- a/src/main/java/net/minecraft/server/StructureSettings.java
 +++ b/src/main/java/net/minecraft/server/StructureSettings.java
 @@ -26,7 +26,7 @@ public class StructureSettings {
@@ -151,10 +954,10 @@ index 31176a5b5..212e606fb 100644
  
      public StructureSettings(boolean flag) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 929e47391..1a312a868 100644
+index b390371d..f01ee4cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -173,7 +173,7 @@ public class CraftChunk implements Chunk {
+@@ -158,7 +158,7 @@ public class CraftChunk implements Chunk {
      @Override
      public boolean isSlimeChunk() {
          // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
@@ -164,7 +967,7 @@ index 929e47391..1a312a868 100644
  
      @Override
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 35d01cbaf..7b4bdb582 100644
+index 35d01cba..7b4bdb58 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -269,4 +269,42 @@ public class SpigotWorldConfig
@@ -211,5 +1014,5 @@ index 35d01cbaf..7b4bdb582 100644
 +    }
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

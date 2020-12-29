@@ -1,4 +1,4 @@
-From 890b241ec354273d635001fa3fb28087685c4747 Mon Sep 17 00:00:00 2001
+From 52f87fecf68846634a577f4d540760c3953d6f98 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Mon, 15 May 2017 15:16:15 +1000
 Subject: [PATCH] Skeleton API Implementations
@@ -37,10 +37,10 @@ index a1a179fb..81cc926c 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 3f25bd33..2fd62574 100644
+index 70d6994e..940f0074 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -2302,6 +2302,15 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -2339,6 +2339,15 @@ public interface World extends PluginMessageRecipient, Metadatable {
      @Nullable
      public Location locateNearestStructure(@NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored);
  
@@ -75,7 +75,7 @@ index b76cf67b..6d9708dc 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 9d5f22a3..b4665365 100644
+index 35746b06..0ce26694 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -585,4 +585,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
@@ -120,10 +120,10 @@ index 76aad05f..4d308c5a 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 1d5bfca2..51475116 100644
+index d4c96e5e..e3d88808 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1287,4 +1287,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1362,4 +1362,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * @param book The book to open for this player
       */
      public void openBook(@NotNull ItemStack book);
@@ -157,5 +157,5 @@ index d650da50..f740bebe 100644
 +    // Spigot end
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

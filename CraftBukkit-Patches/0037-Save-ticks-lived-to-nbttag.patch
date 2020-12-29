@@ -1,14 +1,14 @@
-From a9cb1af62b6f9d4767635047cddb53b7878e1e44 Mon Sep 17 00:00:00 2001
+From 85eae984b0bb598c0581deadf8924fff58a7e45c Mon Sep 17 00:00:00 2001
 From: DerFlash <bte@freenet.de>
 Date: Tue, 9 Jul 2013 00:11:12 +0200
 Subject: [PATCH] Save ticks lived to nbttag
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index c8a999904..c56ac6722 100644
+index 96dc4cdb..11f3896a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1477,6 +1477,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1527,6 +1527,7 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
              if (this.persistentInvisibility) {
                  nbttagcompound.setBoolean("Bukkit.invisible", this.persistentInvisibility);
              }
@@ -16,7 +16,7 @@ index c8a999904..c56ac6722 100644
              // CraftBukkit end
              IChatBaseComponent ichatbasecomponent = this.getCustomName();
  
-@@ -1622,6 +1623,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1679,6 +1680,8 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
              if (this instanceof EntityLiving) {
                  EntityLiving entity = (EntityLiving) this;
  
@@ -26,5 +26,5 @@ index c8a999904..c56ac6722 100644
                  if (entity instanceof EntityTameableAnimal && !isLevelAtLeast(nbttagcompound, 2) && !nbttagcompound.getBoolean("PersistenceRequired")) {
                      EntityInsentient entityinsentient = (EntityInsentient) entity;
 -- 
-2.25.1
+2.21.0.windows.1
 

@@ -1,11 +1,11 @@
-From 08d4c7b14b1248b2f52f15f7c6e59ef2fab307b7 Mon Sep 17 00:00:00 2001
+From 1c39827e3f5ed1df0a8fbb018e75a92d32bc9b09 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 30 Jul 2016 11:29:14 +1000
 Subject: [PATCH] Branchless NibbleArray
 
 
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
-index 99822dde7..9aeb6ed1b 100644
+index 99822dde..9aeb6ed1 100644
 --- a/src/main/java/net/minecraft/server/NibbleArray.java
 +++ b/src/main/java/net/minecraft/server/NibbleArray.java
 @@ -32,29 +32,27 @@ public class NibbleArray {
@@ -47,7 +47,7 @@ index 99822dde7..9aeb6ed1b 100644
      private boolean c(int i) {
 diff --git a/src/test/java/org/bukkit/NibbleArrayTest.java b/src/test/java/org/bukkit/NibbleArrayTest.java
 new file mode 100644
-index 000000000..40ba97fb7
+index 00000000..40ba97fb
 --- /dev/null
 +++ b/src/test/java/org/bukkit/NibbleArrayTest.java
 @@ -0,0 +1,29 @@
@@ -81,5 +81,5 @@ index 000000000..40ba97fb7
 +    }
 +}
 -- 
-2.25.1
+2.21.0.windows.1
 

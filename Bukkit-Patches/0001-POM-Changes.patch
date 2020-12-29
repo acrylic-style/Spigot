@@ -1,4 +1,4 @@
-From 61d42377208358c4c11f8498277022ce9009926f Mon Sep 17 00:00:00 2001
+From 9d17453537e4157f21e77a6fec9e0ee68de5ae49 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 2 Jun 2013 10:36:24 +1000
 Subject: [PATCH] POM Changes
@@ -20,10 +20,10 @@ index 8b624164..f422bf14 100644
          <!-- See http://checkstyle.sourceforge.net/config_imports.html -->
          <module name="AvoidStarImport">
 diff --git a/pom.xml b/pom.xml
-index a1b3aaf2..a4925fb9 100644
+index c47a4ec4..dff030bd 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -3,14 +3,14 @@
+@@ -3,19 +3,14 @@
           xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
      <modelVersion>4.0.0</modelVersion>
  
@@ -31,8 +31,13 @@ index a1b3aaf2..a4925fb9 100644
 -    <artifactId>bukkit</artifactId>
 +    <groupId>org.spigotmc</groupId>
 +    <artifactId>spigot-api</artifactId>
-     <version>1.16.4-R0.1-SNAPSHOT</version>
+     <version>1.17-R0.1-SNAPSHOT</version>
      <packaging>jar</packaging>
+-    <parent>
+-        <artifactId>craftbukkit-parent</artifactId>
+-        <groupId>xyz.acrylicstyle</groupId>
+-        <version>dev-SNAPSHOT</version>
+-    </parent>
  
 -    <name>Bukkit</name>
 +    <name>Spigot-API</name>
@@ -43,5 +48,5 @@ index a1b3aaf2..a4925fb9 100644
      <properties>
          <skipTests>true</skipTests>
 -- 
-2.25.1
+2.21.0.windows.1
 

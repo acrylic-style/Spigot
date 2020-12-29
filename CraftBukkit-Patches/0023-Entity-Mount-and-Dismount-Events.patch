@@ -1,14 +1,14 @@
-From b705d088e85d65a513178e407d52bc5047887d83 Mon Sep 17 00:00:00 2001
+From bef7eb3ce59cacafa56430ae8105998b9c6aae56 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 27 Feb 2016 10:07:58 +1100
 Subject: [PATCH] Entity Mount and Dismount Events
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index c6a55f43c..c8a999904 100644
+index 66e02ad2..96dc4cdb 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1893,6 +1893,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1950,6 +1950,16 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
                  }
              }
              // CraftBukkit end
@@ -22,10 +22,10 @@ index c6a55f43c..c8a999904 100644
 +                return false;
 +            }
 +            // Spigot end
-             if (!this.world.isClientSide && entity instanceof EntityHuman && !(this.getRidingPassenger() instanceof EntityHuman)) {
-                 this.passengers.add(0, entity);
+             if (this.passengers.isEmpty()) {
+                 this.passengers = ImmutableList.of(entity);
              } else {
-@@ -1926,6 +1936,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+@@ -1991,6 +2001,16 @@ public abstract class Entity implements INamableTileEntity, EntityAccess, IComma
                  }
              }
              // CraftBukkit end
@@ -39,9 +39,9 @@ index c6a55f43c..c8a999904 100644
 +                return false;
 +            }
 +            // Spigot end
-             this.passengers.remove(entity);
-             entity.j = 60;
-         }
+             if (this.passengers.size() == 1 && this.passengers.get(0) == entity) {
+                 this.passengers = ImmutableList.of();
+             } else {
 -- 
-2.25.1
+2.21.0.windows.1
 

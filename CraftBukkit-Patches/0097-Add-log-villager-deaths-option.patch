@@ -1,14 +1,14 @@
-From f7e67dbba8b267ff846474b88bd2aaf775032aee Mon Sep 17 00:00:00 2001
+From 221dd8dd49ae57f962621521665b6477010a649a Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sat, 14 Dec 2019 10:26:52 +1100
 Subject: [PATCH] Add log-villager-deaths option
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
-index bdaa953c0..824e172f0 100644
+index 633ed53a..7a4c5d3c 100644
 --- a/src/main/java/net/minecraft/server/EntityVillager.java
 +++ b/src/main/java/net/minecraft/server/EntityVillager.java
-@@ -551,7 +551,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+@@ -548,7 +548,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
  
      @Override
      public void die(DamageSource damagesource) {
@@ -18,7 +18,7 @@ index bdaa953c0..824e172f0 100644
  
          if (entity != null) {
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index c17ce1539..ff1ddfcfe 100644
+index 65bc3d6b..beddd116 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -386,4 +386,9 @@ public class SpigotConfig
@@ -32,5 +32,5 @@ index c17ce1539..ff1ddfcfe 100644
 +    }
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

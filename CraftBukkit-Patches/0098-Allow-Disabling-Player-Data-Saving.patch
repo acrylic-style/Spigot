@@ -1,11 +1,11 @@
-From c497a87818bf544be6d86acaaeb2a26d61500a60 Mon Sep 17 00:00:00 2001
+From a33ae633a97b60a016c3116dca8a13bcbac6ccd2 Mon Sep 17 00:00:00 2001
 From: Sander Knauff <sanderknauff@hotmail.com>
 Date: Sat, 7 Nov 2020 18:23:42 +1100
 Subject: [PATCH] Allow Disabling Player Data Saving
 
 
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-index 9190e7c6d..88e0c5167 100644
+index 9190e7c6..88e0c516 100644
 --- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
 +++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
 @@ -25,6 +25,7 @@ public class WorldNBTStorage {
@@ -17,7 +17,7 @@ index 9190e7c6d..88e0c5167 100644
              NBTTagCompound nbttagcompound = entityhuman.save(new NBTTagCompound());
              File file = File.createTempFile(entityhuman.getUniqueIDString() + "-", ".dat", this.playerDir);
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index ff1ddfcfe..a83e1cdbc 100644
+index beddd116..8d952d36 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -391,4 +391,9 @@ public class SpigotConfig
@@ -31,5 +31,5 @@ index ff1ddfcfe..a83e1cdbc 100644
 +    }
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

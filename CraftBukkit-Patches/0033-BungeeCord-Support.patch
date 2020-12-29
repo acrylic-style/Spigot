@@ -1,4 +1,4 @@
-From 809d9115808025f5c5e714714d41fe624d71b66a Mon Sep 17 00:00:00 2001
+From 5c8e16dbbd626efa9d58f4bc750ef2fa51f26c03 Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 1 Dec 2013 18:18:41 +1100
 Subject: [PATCH] BungeeCord Support
@@ -6,7 +6,7 @@ Subject: [PATCH] BungeeCord Support
 Provides support for IP forwarding via BungeeCord.
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index d9b410afa..69fd0a7b2 100644
+index a064546d..e0c8dde5 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -7,6 +7,7 @@ import java.util.HashMap;
@@ -45,7 +45,7 @@ index d9b410afa..69fd0a7b2 100644
                  }
                  break;
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index f541eedae..291baeb12 100644
+index 360cb935..b58b1606 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -100,9 +100,24 @@ public class LoginListener implements PacketLoginInListener {
@@ -75,24 +75,354 @@ index f541eedae..291baeb12 100644
      // Spigot end
  
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index ee57efb42..61e927ab7 100644
---- a/src/main/java/net/minecraft/server/NetworkManager.java
+new file mode 100644
+index 00000000..de71317c
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -45,6 +45,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-     private final Queue<NetworkManager.QueuedPacket> packetQueue = Queues.newConcurrentLinkedQueue();
-     public Channel channel;
-     public SocketAddress socketAddress;
+@@ -0,0 +1,351 @@
++package net.minecraft.server;
++
++import com.google.common.collect.Queues;
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import io.netty.channel.Channel;
++import io.netty.channel.ChannelFuture;
++import io.netty.channel.ChannelFutureListener;
++import io.netty.channel.ChannelHandlerContext;
++import io.netty.channel.DefaultEventLoopGroup;
++import io.netty.channel.SimpleChannelInboundHandler;
++import io.netty.channel.epoll.EpollEventLoopGroup;
++import io.netty.channel.local.LocalChannel;
++import io.netty.channel.local.LocalServerChannel;
++import io.netty.channel.nio.NioEventLoopGroup;
++import io.netty.handler.timeout.TimeoutException;
++import io.netty.util.AttributeKey;
++import io.netty.util.concurrent.Future;
++import io.netty.util.concurrent.GenericFutureListener;
++import java.net.SocketAddress;
++import java.util.Queue;
++import javax.annotation.Nullable;
++import javax.crypto.Cipher;
++import org.apache.commons.lang3.Validate;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++import org.apache.logging.log4j.Marker;
++import org.apache.logging.log4j.MarkerManager;
++
++public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
++
++    private static final Logger LOGGER = LogManager.getLogger();
++    public static final Marker a = MarkerManager.getMarker("NETWORK");
++    public static final Marker b = MarkerManager.getMarker("NETWORK_PACKETS", NetworkManager.a);
++    public static final AttributeKey<EnumProtocol> c = AttributeKey.valueOf("protocol");
++    public static final LazyInitVar<NioEventLoopGroup> d = new LazyInitVar<>(() -> {
++        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
++    });
++    public static final LazyInitVar<EpollEventLoopGroup> e = new LazyInitVar<>(() -> {
++        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build());
++    });
++    public static final LazyInitVar<DefaultEventLoopGroup> f = new LazyInitVar<>(() -> {
++        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
++    });
++    private final EnumProtocolDirection h;
++    private final Queue<QueuedPacket> packetQueue = Queues.newConcurrentLinkedQueue();
++    public Channel channel;
++    public SocketAddress socketAddress;
 +    // Spigot Start
 +    public java.util.UUID spoofedUUID;
 +    public com.mojang.authlib.properties.Property[] spoofedProfile;
 +    // Spigot End
-     private PacketListener packetListener;
-     private IChatBaseComponent m;
-     private boolean n;
-@@ -330,4 +334,11 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-             this.b = genericfuturelistener;
-         }
-     }
++    private PacketListener packetListener;
++    private IChatBaseComponent m;
++    private boolean n;
++    private boolean o;
++    private int p;
++    private int q;
++    private float r;
++    private float s;
++    private int t;
++    private boolean u;
++
++    public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
++        this.h = enumprotocoldirection;
++    }
++
++    public void channelActive(ChannelHandlerContext channelhandlercontext) throws Exception {
++        super.channelActive(channelhandlercontext);
++        this.channel = channelhandlercontext.channel();
++        this.socketAddress = this.channel.remoteAddress();
++
++        try {
++            this.setProtocol(EnumProtocol.HANDSHAKING);
++        } catch (Throwable throwable) {
++            NetworkManager.LOGGER.fatal(throwable);
++        }
++
++    }
++
++    public void setProtocol(EnumProtocol enumprotocol) {
++        this.channel.attr(NetworkManager.c).set(enumprotocol);
++        this.channel.config().setAutoRead(true);
++        NetworkManager.LOGGER.debug("Enabled auto read");
++    }
++
++    public void channelInactive(ChannelHandlerContext channelhandlercontext) {
++        this.close(new ChatMessage("disconnect.endOfStream"));
++    }
++
++    public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
++        if (throwable instanceof SkipEncodeException) {
++            NetworkManager.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
++        } else {
++            boolean flag = !this.u;
++
++            this.u = true;
++            if (this.channel.isOpen()) {
++                if (throwable instanceof TimeoutException) {
++                    NetworkManager.LOGGER.debug("Timeout", throwable);
++                    this.close(new ChatMessage("disconnect.timeout"));
++                } else {
++                    ChatMessage chatmessage = new ChatMessage("disconnect.genericReason", new Object[]{"Internal Exception: " + throwable});
++
++                    if (flag) {
++                        NetworkManager.LOGGER.debug("Failed to sent packet", throwable);
++                        EnumProtocol enumprotocol = this.p();
++                        Packet<?> packet = enumprotocol == EnumProtocol.LOGIN ? new PacketLoginOutDisconnect(chatmessage) : new PacketPlayOutKickDisconnect(chatmessage);
++
++                        this.sendPacket((Packet) packet, (future) -> {
++                            this.close(chatmessage);
++                        });
++                        this.stopReading();
++                    } else {
++                        NetworkManager.LOGGER.debug("Double fault", throwable);
++                        this.close(chatmessage);
++                    }
++                }
++
++            }
++        }
++    }
++
++    protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
++        if (this.channel.isOpen()) {
++            try {
++                a(packet, this.packetListener);
++            } catch (CancelledPacketHandleException cancelledpackethandleexception) {
++                ;
++            }
++
++            ++this.p;
++        }
++
++    }
++
++    private static <T extends PacketListener> void a(Packet<T> packet, PacketListener packetlistener) {
++        packet.a((T) packetlistener); // CraftBukkit - decompile error
++    }
++
++    public void setPacketListener(PacketListener packetlistener) {
++        Validate.notNull(packetlistener, "packetListener", new Object[0]);
++        this.packetListener = packetlistener;
++    }
++
++    public void sendPacket(Packet<?> packet) {
++        this.sendPacket(packet, (GenericFutureListener) null);
++    }
++
++    public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
++        if (this.isConnected()) {
++            this.q();
++            this.b(packet, genericfuturelistener);
++        } else {
++            this.packetQueue.add(new QueuedPacket(packet, genericfuturelistener));
++        }
++
++    }
++
++    private void b(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
++        EnumProtocol enumprotocol = EnumProtocol.a(packet);
++        EnumProtocol enumprotocol1 = this.p();
++
++        ++this.q;
++        if (enumprotocol1 != enumprotocol) {
++            NetworkManager.LOGGER.debug("Disabled auto read");
++            this.channel.config().setAutoRead(false);
++        }
++
++        if (this.channel.eventLoop().inEventLoop()) {
++            if (enumprotocol != enumprotocol1) {
++                this.setProtocol(enumprotocol);
++            }
++
++            ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
++
++            if (genericfuturelistener != null) {
++                channelfuture.addListener(genericfuturelistener);
++            }
++
++            channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
++        } else {
++            this.channel.eventLoop().execute(() -> {
++                if (enumprotocol != enumprotocol1) {
++                    this.setProtocol(enumprotocol);
++                }
++
++                ChannelFuture channelfuture1 = this.channel.writeAndFlush(packet);
++
++                if (genericfuturelistener != null) {
++                    channelfuture1.addListener(genericfuturelistener);
++                }
++
++                channelfuture1.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
++            });
++        }
++
++    }
++
++    private EnumProtocol p() {
++        return (EnumProtocol) this.channel.attr(NetworkManager.c).get();
++    }
++
++    private void q() {
++        if (this.channel != null && this.channel.isOpen()) {
++            Queue queue = this.packetQueue;
++
++            synchronized (this.packetQueue) {
++                QueuedPacket networkmanager_queuedpacket;
++
++                while ((networkmanager_queuedpacket = (QueuedPacket) this.packetQueue.poll()) != null) {
++                    this.b(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
++                }
++
++            }
++        }
++    }
++
++    public void a() {
++        this.q();
++        if (this.packetListener instanceof LoginListener) {
++            ((LoginListener) this.packetListener).tick();
++        }
++
++        if (this.packetListener instanceof PlayerConnection) {
++            ((PlayerConnection) this.packetListener).tick();
++        }
++
++        if (this.channel != null) {
++            this.channel.flush();
++        }
++
++        if (this.t++ % 20 == 0) {
++            this.b();
++        }
++
++    }
++
++    protected void b() {
++        this.s = MathHelper.g(0.75F, (float) this.q, this.s);
++        this.r = MathHelper.g(0.75F, (float) this.p, this.r);
++        this.q = 0;
++        this.p = 0;
++    }
++
++    public SocketAddress getSocketAddress() {
++        return this.socketAddress;
++    }
++
++    public void close(IChatBaseComponent ichatbasecomponent) {
++        if (this.channel.isOpen()) {
++            this.channel.close(); // We can't wait as this may be called from an event loop.
++            this.m = ichatbasecomponent;
++        }
++
++    }
++
++    public boolean isLocal() {
++        return this.channel instanceof LocalChannel || this.channel instanceof LocalServerChannel;
++    }
++
++    public void a(Cipher cipher, Cipher cipher1) {
++        this.n = true;
++        this.channel.pipeline().addBefore("splitter", "decrypt", new PacketDecrypter(cipher));
++        this.channel.pipeline().addBefore("prepender", "encrypt", new PacketEncrypter(cipher1));
++    }
++
++    public boolean isConnected() {
++        return this.channel != null && this.channel.isOpen();
++    }
++
++    public boolean i() {
++        return this.channel == null;
++    }
++
++    public PacketListener j() {
++        return this.packetListener;
++    }
++
++    @Nullable
++    public IChatBaseComponent k() {
++        return this.m;
++    }
++
++    public void stopReading() {
++        this.channel.config().setAutoRead(false);
++    }
++
++    public void setCompressionLevel(int i) {
++        if (i >= 0) {
++            if (this.channel.pipeline().get("decompress") instanceof PacketDecompressor) {
++                ((PacketDecompressor) this.channel.pipeline().get("decompress")).a(i);
++            } else {
++                this.channel.pipeline().addBefore("decoder", "decompress", new PacketDecompressor(i));
++            }
++
++            if (this.channel.pipeline().get("compress") instanceof PacketCompressor) {
++                ((PacketCompressor) this.channel.pipeline().get("compress")).a(i);
++            } else {
++                this.channel.pipeline().addBefore("encoder", "compress", new PacketCompressor(i));
++            }
++        } else {
++            if (this.channel.pipeline().get("decompress") instanceof PacketDecompressor) {
++                this.channel.pipeline().remove("decompress");
++            }
++
++            if (this.channel.pipeline().get("compress") instanceof PacketCompressor) {
++                this.channel.pipeline().remove("compress");
++            }
++        }
++
++    }
++
++    public void handleDisconnection() {
++        if (this.channel != null && !this.channel.isOpen()) {
++            if (this.o) {
++                NetworkManager.LOGGER.warn("handleDisconnection() called twice");
++            } else {
++                this.o = true;
++                if (this.k() != null) {
++                    this.j().a(this.k());
++                } else if (this.j() != null) {
++                    this.j().a(new ChatMessage("multiplayer.disconnect.generic"));
++                }
++            }
++
++        }
++    }
++
++    public float n() {
++        return this.r;
++    }
++
++    static class QueuedPacket {
++
++        private final Packet<?> a;
++        @Nullable
++        private final GenericFutureListener<? extends Future<? super Void>> b;
++
++        public QueuedPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
++            this.a = packet;
++            this.b = genericfuturelistener;
++        }
++    }
 +
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
@@ -100,9 +430,9 @@ index ee57efb42..61e927ab7 100644
 +        return this.channel.remoteAddress();
 +    }
 +    // Spigot End
- }
++}
 diff --git a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
-index 6aeea22ae..4f008e472 100644
+index 6aeea22a..4f008e47 100644
 --- a/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 +++ b/src/main/java/net/minecraft/server/PacketHandshakingInSetProtocol.java
 @@ -14,7 +14,7 @@ public class PacketHandshakingInSetProtocol implements Packet<PacketHandshakingI
@@ -115,12 +445,12 @@ index 6aeea22ae..4f008e472 100644
          this.d = EnumProtocol.a(packetdataserializer.i());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index b94400679..d294fbafd 100644
+index f31da33e..da121887 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -494,7 +494,7 @@ public abstract class PlayerList {
+@@ -484,7 +484,7 @@ public abstract class PlayerList {
  
-         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(World.OVERWORLD), gameprofile, new PlayerInteractManager(this.server.getWorldServer(World.OVERWORLD)));
+         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(World.OVERWORLD), gameprofile);
          Player player = entity.getBukkitEntity();
 -        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress());
 +        PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress());
@@ -128,7 +458,7 @@ index b94400679..d294fbafd 100644
          if (getProfileBans().isBanned(gameprofile) && !getProfileBans().get(gameprofile).hasExpired()) {
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 95d629601..3230f4ee7 100644
+index 64a958fe..8285fe3c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -656,7 +656,13 @@ public final class CraftServer implements Server {
@@ -147,24 +477,23 @@ index 95d629601..3230f4ee7 100644
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index a0745f0f7..5691390d2 100644
+index 9cb04572..9a59c796 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1723,6 +1723,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1738,6 +1738,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     // Spigot start
      private final Player.Spigot spigot = new Player.Spigot()
      {
- 
 +        @Override
 +        public InetSocketAddress getRawAddress()
 +        {
 +            return (InetSocketAddress) getHandle().playerConnection.networkManager.getRawAddress();
 +        }
-+
+ 
          @Override
          public boolean getCollidesWithEntities() {
-             return CraftPlayer.this.isCollidable();
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 37bf0cec0..642f3a39a 100644
+index 37bf0cec..a822ad70 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -214,4 +214,14 @@ public class SpigotConfig
@@ -177,11 +506,11 @@ index 37bf0cec0..642f3a39a 100644
 +        if ( version < 4 )
 +        {
 +            set( "settings.bungeecord", false );
-+            System.out.println( "Oudated config, disabling BungeeCord support!" );
++            System.out.println( "Outdated config, disabling BungeeCord support!" );
 +        }
 +        bungee = getBoolean( "settings.bungeecord", false );
 +    }
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

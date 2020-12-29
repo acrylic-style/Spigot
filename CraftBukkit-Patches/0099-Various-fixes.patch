@@ -1,0 +1,648 @@
+From bfe611421e4a1791bf0dcc58b658c5aa875fe25d Mon Sep 17 00:00:00 2001
+From: acrylic-style <ilyy@outlook.jp>
+Date: Tue, 29 Dec 2020 20:32:42 +0900
+Subject: [PATCH] Various fixes
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+index 1d31cd80..ca5dd8db 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
++++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+@@ -457,7 +457,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
+ 
+                 Block nmsBlock = craftBlock.getNMS().getBlock();
+                 if (nmsBlock.a(explosionSource)) {
+-                    TileEntity tileentity = nmsBlock.getBlockData().getBlock().isTileEntity() ? this.world.getTileEntity(blockposition) : null;
++                    TileEntity tileentity = nmsBlock.getBlockData().isTileEntity() ? this.world.getTileEntity(blockposition) : null;
+                     LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.ORIGIN, Vec3D.a(blockposition)).set(LootContextParameters.TOOL, ItemStack.b).set(LootContextParameters.EXPLOSION_RADIUS, 1.0F / event.getYield()).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity);
+ 
+                     craftBlock.getNMS().a(loottableinfo_builder).forEach((itemstack) -> {
+diff --git a/src/main/java/net/minecraft/server/EntitySquid.java b/src/main/java/net/minecraft/server/EntitySquid.java
+index 77b48d03..f1610515 100644
+--- a/src/main/java/net/minecraft/server/EntitySquid.java
++++ b/src/main/java/net/minecraft/server/EntitySquid.java
+@@ -7,28 +7,28 @@ public class EntitySquid extends EntityWaterAnimal {
+     public float b;
+     public float c;
+     public float d;
+-    public float bo;
+-    public float bp;
+-    public float bq;
+-    public float br;
+-    public float bs;
++    public float bj;
++    public float bk;
++    public float bl;
++    public float bm;
++    public float bn;
++    private float bo;
++    private float bp;
++    private float bq;
++    private float br;
++    private float bs;
+     private float bt;
+-    private float bu;
+-    private float bv;
+-    private float bw;
+-    private float bx;
+-    private float by;
+ 
+     public EntitySquid(EntityTypes<? extends EntitySquid> entitytypes, World world) {
+         super(entitytypes, world);
+         this.random.setSeed((long) this.getId());
+-        this.bu = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
++        this.bp = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+     }
+ 
+     @Override
+     protected void initPathfinder() {
+-        this.goalSelector.a(0, new EntitySquid.PathfinderGoalSquid(this));
+-        this.goalSelector.a(1, new EntitySquid.a());
++        this.goalSelector.a(0, new PathfinderGoalSquid(this));
++        this.goalSelector.a(1, new a());
+     }
+ 
+     public static AttributeProvider.Builder m() {
+@@ -42,17 +42,17 @@ public class EntitySquid extends EntityWaterAnimal {
+ 
+     @Override
+     protected SoundEffect getSoundAmbient() {
+-        return SoundEffects.ENTITY_SQUID_AMBIENT;
++        return SoundEffects.SQUID_AMBIENT;
+     }
+ 
+     @Override
+     protected SoundEffect getSoundHurt(DamageSource damagesource) {
+-        return SoundEffects.ENTITY_SQUID_HURT;
++        return SoundEffects.SQUID_HURT;
+     }
+ 
+     @Override
+     protected SoundEffect getSoundDeath() {
+-        return SoundEffects.ENTITY_SQUID_DEATH;
++        return SoundEffects.SQUID_DEATH;
+     }
+ 
+     @Override
+@@ -69,53 +69,53 @@ public class EntitySquid extends EntityWaterAnimal {
+     public void movementTick() {
+         super.movementTick();
+         this.c = this.b;
+-        this.bo = this.d;
+-        this.bq = this.bp;
+-        this.bs = this.br;
+-        this.bp += this.bu;
+-        if ((double) this.bp > 6.283185307179586D) {
++        this.bj = this.d;
++        this.bl = this.bk;
++        this.bn = this.bm;
++        this.bk += this.bp;
++        if ((double) this.bk > 6.283185307179586D) {
+             if (this.world.isClientSide) {
+-                this.bp = 6.2831855F;
++                this.bk = 6.2831855F;
+             } else {
+-                this.bp = (float) ((double) this.bp - 6.283185307179586D);
++                this.bk = (float) ((double) this.bk - 6.283185307179586D);
+                 if (this.random.nextInt(10) == 0) {
+-                    this.bu = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
++                    this.bp = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
+                 }
+ 
+                 this.world.broadcastEntityEffect(this, (byte) 19);
+             }
+         }
+ 
+-        if (this.aH()) {
+-            if (this.bp < 3.1415927F) {
+-                float f = this.bp / 3.1415927F;
++        if (this.aJ()) {
++            if (this.bk < 3.1415927F) {
++                float f = this.bk / 3.1415927F;
+ 
+-                this.br = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
++                this.bm = MathHelper.sin(f * f * 3.1415927F) * 3.1415927F * 0.25F;
+                 if ((double) f > 0.75D) {
+-                    this.bt = 1.0F;
+-                    this.bv = 1.0F;
++                    this.bo = 1.0F;
++                    this.bq = 1.0F;
+                 } else {
+-                    this.bv *= 0.8F;
++                    this.bq *= 0.8F;
+                 }
+             } else {
+-                this.br = 0.0F;
+-                this.bt *= 0.9F;
+-                this.bv *= 0.99F;
++                this.bm = 0.0F;
++                this.bo *= 0.9F;
++                this.bq *= 0.99F;
+             }
+ 
+             if (!this.world.isClientSide) {
+-                this.setMot((double) (this.bw * this.bt), (double) (this.bx * this.bt), (double) (this.by * this.bt));
++                this.setMot((double) (this.br * this.bo), (double) (this.bs * this.bo), (double) (this.bt * this.bo));
+             }
+ 
+             Vec3D vec3d = this.getMot();
+             float f1 = MathHelper.sqrt(c(vec3d));
+ 
+-            this.aA += (-((float) MathHelper.d(vec3d.x, vec3d.z)) * 57.295776F - this.aA) * 0.1F;
+-            this.yaw = this.aA;
+-            this.d = (float) ((double) this.d + 3.141592653589793D * (double) this.bv * 1.5D);
++            this.av += (-((float) MathHelper.d(vec3d.x, vec3d.z)) * 57.295776F - this.av) * 0.1F;
++            this.yaw = this.av;
++            this.d = (float) ((double) this.d + 3.141592653589793D * (double) this.bq * 1.5D);
+             this.b += (-((float) MathHelper.d((double) f1, vec3d.y)) * 57.295776F - this.b) * 0.1F;
+         } else {
+-            this.br = MathHelper.e(MathHelper.sin(this.bp)) * 3.1415927F * 0.25F;
++            this.bm = MathHelper.e(MathHelper.sin(this.bk)) * 3.1415927F * 0.25F;
+             if (!this.world.isClientSide) {
+                 double d0 = this.getMot().y;
+ 
+@@ -136,7 +136,7 @@ public class EntitySquid extends EntityWaterAnimal {
+     @Override
+     public boolean damageEntity(DamageSource damagesource, float f) {
+         if (super.damageEntity(damagesource, f) && this.getLastDamager() != null) {
+-            this.eL();
++            this.fg();
+             return true;
+         } else {
+             return false;
+@@ -146,12 +146,12 @@ public class EntitySquid extends EntityWaterAnimal {
+     private Vec3D i(Vec3D vec3d) {
+         Vec3D vec3d1 = vec3d.a(this.c * 0.017453292F);
+ 
+-        vec3d1 = vec3d1.b(-this.aB * 0.017453292F);
++        vec3d1 = vec3d1.b(-this.aw * 0.017453292F);
+         return vec3d1;
+     }
+ 
+-    private void eL() {
+-        this.playSound(SoundEffects.ENTITY_SQUID_SQUIRT, this.getSoundVolume(), this.dH());
++    private void fg() {
++        this.playSound(SoundEffects.SQUID_SQUIRT, this.getSoundVolume(), this.ec());
+         Vec3D vec3d = this.i(new Vec3D(0.0D, -1.0D, 0.0D)).add(this.locX(), this.locY(), this.locZ());
+ 
+         for (int i = 0; i < 30; ++i) {
+@@ -173,13 +173,13 @@ public class EntitySquid extends EntityWaterAnimal {
+     }
+ 
+     public void a(float f, float f1, float f2) {
+-        this.bw = f;
+-        this.bx = f1;
+-        this.by = f2;
++        this.br = f;
++        this.bs = f1;
++        this.bt = f2;
+     }
+ 
+-    public boolean eK() {
+-        return this.bw != 0.0F || this.bx != 0.0F || this.by != 0.0F;
++    public boolean ff() {
++        return this.br != 0.0F || this.bs != 0.0F || this.bt != 0.0F;
+     }
+ 
+     class a extends PathfinderGoal {
+@@ -256,11 +256,11 @@ public class EntitySquid extends EntityWaterAnimal {
+ 
+         @Override
+         public void e() {
+-            int i = this.b.dd();
++            int i = this.b.dx();
+ 
+             if (i > 100) {
+                 this.b.a(0.0F, 0.0F, 0.0F);
+-            } else if (this.b.getRandom().nextInt(50) == 0 || !this.b.inWater || !this.b.eK()) {
++            } else if (this.b.getRandom().nextInt(50) == 0 || !this.b.inWater || !this.b.ff()) {
+                 float f = this.b.getRandom().nextFloat() * 6.2831855F;
+                 float f1 = MathHelper.cos(f) * 0.2F;
+                 float f2 = -0.1F + this.b.getRandom().nextFloat() * 0.2F;
+diff --git a/src/main/java/net/minecraft/server/ItemDebugStick.java b/src/main/java/net/minecraft/server/ItemDebugStick.java
+index 232e48b0..8bd44907 100644
+--- a/src/main/java/net/minecraft/server/ItemDebugStick.java
++++ b/src/main/java/net/minecraft/server/ItemDebugStick.java
+@@ -73,7 +73,7 @@ public class ItemDebugStick extends Item {
+     }
+ 
+     private static <T extends Comparable<T>> IBlockData a(IBlockData iblockdata, IBlockState<T> iblockstate, boolean flag) {
+-        return (IBlockData) iblockdata.set(iblockstate, (Comparable) a((Iterable) iblockstate.getValues(), (Object) iblockdata.get(iblockstate), flag));
++        return (IBlockData) iblockdata.set(iblockstate,  a( iblockstate.getValues(),  iblockdata.get(iblockstate), flag)); // Spigot - decompile error
+     }
+ 
+     private static <T> T a(Iterable<T> iterable, @Nullable T t0, boolean flag) {
+diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+index d7ba2db6..f8fc0e94 100644
+--- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
+@@ -73,17 +73,7 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+ 
+     @Override
+     public String toString() {
+-        StringBuilder stringbuilder = new StringBuilder("[B;");
+-
+-        for (int i = 0; i < this.data.length; ++i) {
+-            if (i != 0) {
+-                stringbuilder.append(',');
+-            }
+-
+-            stringbuilder.append(this.data[i]).append('B');
+-        }
+-
+-        return stringbuilder.append(']').toString();
++        return this.asString();
+     }
+ 
+     @Override
+@@ -103,21 +93,8 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+     }
+ 
+     @Override
+-    public IChatBaseComponent a(String s, int i) {
+-        IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("B")).a(NBTTagByteArray.g);
+-        IChatMutableComponent ichatmutablecomponent1 = (new ChatComponentText("[")).addSibling(ichatmutablecomponent).c(";");
+-
+-        for (int j = 0; j < this.data.length; ++j) {
+-            IChatMutableComponent ichatmutablecomponent2 = (new ChatComponentText(String.valueOf(this.data[j]))).a(NBTTagByteArray.f);
+-
+-            ichatmutablecomponent1.c(" ").addSibling(ichatmutablecomponent2).addSibling(ichatmutablecomponent);
+-            if (j != this.data.length - 1) {
+-                ichatmutablecomponent1.c(",");
+-            }
+-        }
+-
+-        ichatmutablecomponent1.c("]");
+-        return ichatmutablecomponent1;
++    public void a(TagVisitor tagvisitor) {
++        tagvisitor.a(this);
+     }
+ 
+     public byte[] getBytes() {
+@@ -172,7 +149,7 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+     }
+ 
+     @Override
+-    public byte d_() {
++    public byte e_() {
+         return 1;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/NBTTagIntArray.java b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+index eb3fc6db..68f4b78b 100644
+--- a/src/main/java/net/minecraft/server/NBTTagIntArray.java
++++ b/src/main/java/net/minecraft/server/NBTTagIntArray.java
+@@ -84,17 +84,7 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
+ 
+     @Override
+     public String toString() {
+-        StringBuilder stringbuilder = new StringBuilder("[I;");
+-
+-        for (int i = 0; i < this.data.length; ++i) {
+-            if (i != 0) {
+-                stringbuilder.append(',');
+-            }
+-
+-            stringbuilder.append(this.data[i]);
+-        }
+-
+-        return stringbuilder.append(']').toString();
++        return this.asString();
+     }
+ 
+     @Override
+@@ -118,19 +108,8 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
+     }
+ 
+     @Override
+-    public IChatBaseComponent a(String s, int i) {
+-        IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("I")).a(NBTTagIntArray.g);
+-        IChatMutableComponent ichatmutablecomponent1 = (new ChatComponentText("[")).addSibling(ichatmutablecomponent).c(";");
+-
+-        for (int j = 0; j < this.data.length; ++j) {
+-            ichatmutablecomponent1.c(" ").addSibling((new ChatComponentText(String.valueOf(this.data[j]))).a(NBTTagIntArray.f));
+-            if (j != this.data.length - 1) {
+-                ichatmutablecomponent1.c(",");
+-            }
+-        }
+-
+-        ichatmutablecomponent1.c("]");
+-        return ichatmutablecomponent1;
++    public void a(TagVisitor tagvisitor) {
++        tagvisitor.a(this);
+     }
+ 
+     public int size() {
+@@ -181,7 +160,7 @@ public class NBTTagIntArray extends NBTList<NBTTagInt> {
+     }
+ 
+     @Override
+-    public byte d_() {
++    public byte e_() {
+         return 3;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index 49387e81..15a0257e 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -48,8 +48,8 @@ public class RegionFile implements AutoCloseable {
+         } else {
+             this.e = java_nio_file_path1;
+             this.h = this.g.asIntBuffer();
+-            ((java.nio.Buffer) this.h).limit(1024);
+-            ((java.nio.Buffer) this.g).position(4096);
++            this.h.limit(1024);
++            this.g.position(4096);
+             this.i = this.g.asIntBuffer();
+             if (flag) {
+                 this.dataFile = FileChannel.open(java_nio_file_path, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
+@@ -58,7 +58,7 @@ public class RegionFile implements AutoCloseable {
+             }
+ 
+             this.freeSectors.a(0, 2);
+-            ((java.nio.Buffer) this.g).position(0);
++            this.g.position(0);
+             int i = this.dataFile.read(this.g, 0L);
+ 
+             if (i != -1) {
+@@ -102,7 +102,7 @@ public class RegionFile implements AutoCloseable {
+         }
+     }
+ 
+-    private java.nio.file.Path e(ChunkCoordIntPair chunkcoordintpair) {
++    private java.nio.file.Path f(ChunkCoordIntPair chunkcoordintpair) {
+         String s = "c." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".mcc";
+ 
+         return this.e.resolve(s);
+@@ -128,7 +128,7 @@ public class RegionFile implements AutoCloseable {
+             ByteBuffer bytebuffer = ByteBuffer.allocate(l);
+ 
+             this.dataFile.read(bytebuffer, (long) (j * 4096));
+-            ((java.nio.Buffer) bytebuffer).flip();
++            bytebuffer.flip();
+             if (bytebuffer.remaining() < 5) {
+                 RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", chunkcoordintpair, l, bytebuffer.remaining());
+                 return null;
+@@ -162,6 +162,10 @@ public class RegionFile implements AutoCloseable {
+         }
+     }
+ 
++    private static int b() {
++        return (int) (SystemUtils.getTimeMillis() / 1000L);
++    }
++
+     private static boolean a(byte b0) {
+         return (b0 & 128) != 0;
+     }
+@@ -184,7 +188,7 @@ public class RegionFile implements AutoCloseable {
+ 
+     @Nullable
+     private DataInputStream a(ChunkCoordIntPair chunkcoordintpair, byte b0) throws IOException {
+-        java.nio.file.Path java_nio_file_path = this.e(chunkcoordintpair);
++        java.nio.file.Path java_nio_file_path = this.f(chunkcoordintpair);
+ 
+         if (!Files.isRegularFile(java_nio_file_path, new LinkOption[0])) {
+             RegionFile.LOGGER.error("External chunk path {} is not file", java_nio_file_path);
+@@ -226,7 +230,7 @@ public class RegionFile implements AutoCloseable {
+ 
+             try {
+                 this.dataFile.read(bytebuffer, (long) (j * 4096));
+-                ((java.nio.Buffer) bytebuffer).flip();
++                bytebuffer.flip();
+                 if (bytebuffer.remaining() != 5) {
+                     return false;
+                 } else {
+@@ -238,7 +242,7 @@ public class RegionFile implements AutoCloseable {
+                             return false;
+                         }
+ 
+-                        if (!Files.isRegularFile(this.e(chunkcoordintpair), new LinkOption[0])) {
++                        if (!Files.isRegularFile(this.f(chunkcoordintpair), new LinkOption[0])) {
+                             return false;
+                         }
+                     } else {
+@@ -266,46 +270,57 @@ public class RegionFile implements AutoCloseable {
+     }
+ 
+     public DataOutputStream c(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+-        return new DataOutputStream(new BufferedOutputStream(this.f.a((OutputStream) (new RegionFile.ChunkBuffer(chunkcoordintpair)))));
++        return new DataOutputStream(new BufferedOutputStream(this.f.a((OutputStream) (new ChunkBuffer(chunkcoordintpair)))));
+     }
+ 
+     public void a() throws IOException {
+         this.dataFile.force(true);
+     }
+ 
++    public void d(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++        int i = h(chunkcoordintpair);
++        int j = this.h.get(i);
++
++        if (j != 0) {
++            this.h.put(i, 0);
++            this.i.put(i, b());
++            this.d();
++            Files.deleteIfExists(this.f(chunkcoordintpair));
++            this.freeSectors.b(b(j), a(j));
++        }
++    }
++
+     protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, ByteBuffer bytebuffer) throws IOException {
+-        int i = g(chunkcoordintpair);
++        int i = h(chunkcoordintpair);
+         int j = this.h.get(i);
+         int k = b(j);
+         int l = a(j);
+         int i1 = bytebuffer.remaining();
+         int j1 = c(i1);
+         int k1;
+-        RegionFile.b regionfile_b;
++        b regionfile_b;
+ 
+         if (j1 >= 256) {
+-            java.nio.file.Path java_nio_file_path = this.e(chunkcoordintpair);
++            java.nio.file.Path java_nio_file_path = this.f(chunkcoordintpair);
+ 
+             RegionFile.LOGGER.warn("Saving oversized chunk {} ({} bytes} to external file {}", chunkcoordintpair, i1, java_nio_file_path);
+             j1 = 1;
+             k1 = this.freeSectors.a(j1);
+             regionfile_b = this.a(java_nio_file_path, bytebuffer);
+-            ByteBuffer bytebuffer1 = this.b();
++            ByteBuffer bytebuffer1 = this.c();
+ 
+             this.dataFile.write(bytebuffer1, (long) (k1 * 4096));
+         } else {
+             k1 = this.freeSectors.a(j1);
+             regionfile_b = () -> {
+-                Files.deleteIfExists(this.e(chunkcoordintpair));
++                Files.deleteIfExists(this.f(chunkcoordintpair));
+             };
+             this.dataFile.write(bytebuffer, (long) (k1 * 4096));
+         }
+ 
+-        int l1 = (int) (SystemUtils.getTimeMillis() / 1000L);
+-
+         this.h.put(i, this.a(k1, j1));
+-        this.i.put(i, l1);
+-        this.c();
++        this.i.put(i, b());
++        this.d();
+         regionfile_b.run();
+         if (k != 0) {
+             this.freeSectors.b(k, l);
+@@ -313,22 +328,22 @@ public class RegionFile implements AutoCloseable {
+ 
+     }
+ 
+-    private ByteBuffer b() {
++    private ByteBuffer c() {
+         ByteBuffer bytebuffer = ByteBuffer.allocate(5);
+ 
+         bytebuffer.putInt(1);
+         bytebuffer.put((byte) (this.f.a() | 128));
+-        ((java.nio.Buffer) bytebuffer).flip();
++        bytebuffer.flip();
+         return bytebuffer;
+     }
+ 
+-    private RegionFile.b a(java.nio.file.Path java_nio_file_path, ByteBuffer bytebuffer) throws IOException {
++    private b a(java.nio.file.Path java_nio_file_path, ByteBuffer bytebuffer) throws IOException {
+         java.nio.file.Path java_nio_file_path1 = Files.createTempFile(this.e, "tmp", (String) null);
+         FileChannel filechannel = FileChannel.open(java_nio_file_path1, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+         Throwable throwable = null;
+ 
+         try {
+-            ((java.nio.Buffer) bytebuffer).position(5);
++            bytebuffer.position(5);
+             filechannel.write(bytebuffer);
+         } catch (Throwable throwable1) {
+             throwable = throwable1;
+@@ -353,26 +368,26 @@ public class RegionFile implements AutoCloseable {
+         };
+     }
+ 
+-    private void c() throws IOException {
+-        ((java.nio.Buffer) this.g).position(0);
++    private void d() throws IOException {
++        this.g.position(0);
+         this.dataFile.write(this.g, 0L);
+     }
+ 
+     private int getOffset(ChunkCoordIntPair chunkcoordintpair) {
+-        return this.h.get(g(chunkcoordintpair));
++        return this.h.get(h(chunkcoordintpair));
+     }
+ 
+     public boolean chunkExists(ChunkCoordIntPair chunkcoordintpair) {
+         return this.getOffset(chunkcoordintpair) != 0;
+     }
+ 
+-    private static int g(ChunkCoordIntPair chunkcoordintpair) {
++    private static int h(ChunkCoordIntPair chunkcoordintpair) {
+         return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
+     }
+ 
+     public void close() throws IOException {
+         try {
+-            this.d();
++            this.e();
+         } finally {
+             try {
+                 this.dataFile.force(true);
+@@ -383,14 +398,14 @@ public class RegionFile implements AutoCloseable {
+ 
+     }
+ 
+-    private void d() throws IOException {
++    private void e() throws IOException {
+         int i = (int) this.dataFile.size();
+         int j = c(i) * 4096;
+ 
+         if (i != j) {
+             ByteBuffer bytebuffer = RegionFile.c.duplicate();
+ 
+-            ((java.nio.Buffer) bytebuffer).position(0);
++            bytebuffer.position(0);
+             this.dataFile.write(bytebuffer, (long) (j - 1));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+index b9def4d6..809c0b3d 100644
+--- a/src/main/java/net/minecraft/server/ServerStatisticManager.java
++++ b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+@@ -224,7 +224,7 @@ public class ServerStatisticManager extends StatisticManager {
+     }
+ 
+     public void a(EntityPlayer entityplayer) {
+-        int i = this.c.ai();
++        int i = this.c.ah();
+         Object2IntMap<Statistic<?>> object2intmap = new Object2IntOpenHashMap();
+ 
+         if (i - this.f > 300) {
+diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+index 0e00cc27..656d85f1 100644
+--- a/src/main/java/net/minecraft/server/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+@@ -442,7 +442,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper {
+ 
+         if (block instanceof IInventoryHolder) {
+             object = ((IInventoryHolder) block).a(iblockdata, world, blockposition);
+-        } else if (iblockdata.getBlock().isTileEntity()) { // Spigot
++        } else if (iblockdata.isTileEntity()) { // Spigot
+             TileEntity tileentity = world.getTileEntity(blockposition);
+ 
+             if (tileentity instanceof IInventory) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 69f5ef7b..14eff391 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -588,7 +588,7 @@ public class CraftEventFactory {
+                 for (Entity e : entities) {
+                     if (e instanceof EntityExperienceOrb) {
+                         EntityExperienceOrb loopItem = (EntityExperienceOrb) e;
+-                        if (!loopItem.dead) {
++                        if (loopItem.dead == null) {
+                             xp.value += loopItem.value;
+                             loopItem.die(Entity.RemovalReason.DISCARDED);
+                         }
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 4abbe516..f22fb9f8 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -157,6 +157,7 @@ public class ActivationRange
+      */
+     private static void activateChunkEntities(Chunk chunk)
+     {
++        /*
+         for ( EntitySlice slice : chunk.entitySlices )
+         {
+             for ( Entity entity : (Collection<Entity>) slice )
+@@ -175,6 +176,7 @@ public class ActivationRange
+                 }
+             }
+         }
++        */ // Spigot - disabled, there is no entity slices
+     }
+ 
+     /**
+@@ -205,7 +207,7 @@ public class ActivationRange
+         if ( entity instanceof EntityLiving )
+         {
+             EntityLiving living = (EntityLiving) entity;
+-            if ( /*TODO: Missed mapping? living.attackTicks > 0 || */ living.hurtTicks > 0 || living.effects.size() > 0 )
++            if ( /*TODO: Missed mapping? living.attackTicks > 0 || */ living.hurtDuration > 0 || living.effects.size() > 0 )
+             {
+                 return true;
+             }
+@@ -246,7 +248,7 @@ public class ActivationRange
+     {
+         SpigotTimings.checkIfActiveTimer.startTiming();
+         // Never safe to skip fireworks or entities not yet added to chunk
+-        if ( !entity.inChunk || entity instanceof EntityFireworks ) {
++        if ( /*!entity.inChunk || */entity instanceof EntityFireworks ) {
+             SpigotTimings.checkIfActiveTimer.stopTiming();
+             return true;
+         }
+-- 
+2.21.0.windows.1
+

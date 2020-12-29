@@ -1,4 +1,4 @@
-From 4a8243f00c059da40932dd6d0def02a84eb44cd5 Mon Sep 17 00:00:00 2001
+From ebaa94dfeeb5dfbcbfd2a9ab55dcf05f9f82e72b Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 2 Jun 2013 15:10:56 +1000
 Subject: [PATCH] Skeleton API Implementations
@@ -6,7 +6,7 @@ Subject: [PATCH] Skeleton API Implementations
 This contains the basic, empty implementations for some Spigot-API extensions. They are included early in the patching progress so that compilation will still succeed midway despite the APIs only being provided by subsequent patches.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 1b5c92469..d5c6ecac9 100644
+index f8590731..ea2b5013 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -2020,4 +2020,14 @@ public final class CraftServer implements Server {
@@ -25,10 +25,10 @@ index 1b5c92469..d5c6ecac9 100644
 +    }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 571108b53..8d01bd05f 100644
+index ead07d07..c6c0103a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2311,4 +2311,15 @@ public class CraftWorld implements World {
+@@ -2328,4 +2328,15 @@ public class CraftWorld implements World {
      public DragonBattle getEnderDragonBattle() {
          return (getHandle().getDragonBattle() == null) ? null : new CraftDragonBattle(getHandle().getDragonBattle());
      }
@@ -45,7 +45,7 @@ index 571108b53..8d01bd05f 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
-index bafdde8a4..962f65ade 100644
+index bafdde8a..962f65ad 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
 @@ -133,4 +133,11 @@ public class ProxiedNativeCommandSender implements ProxiedCommandSender {
@@ -61,7 +61,7 @@ index bafdde8a4..962f65ade 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
-index d97716027..1f03a15d0 100644
+index d9771602..1f03a15d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ServerCommandSender.java
 @@ -90,4 +90,16 @@ public abstract class ServerCommandSender implements CommandSender {
@@ -82,10 +82,10 @@ index d97716027..1f03a15d0 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index f8d1fb871..d4c50dbac 100644
+index 205e5809..cf49e4d4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1003,4 +1003,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1005,4 +1005,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          }
          return perm;
      }
@@ -102,7 +102,7 @@ index f8d1fb871..d4c50dbac 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
-index 6c05cb414..e7e7d738e 100644
+index 6c05cb41..e7e7d738 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
 @@ -29,4 +29,15 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
@@ -122,10 +122,10 @@ index 6c05cb414..e7e7d738e 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index c50e2ae00..265890326 100644
+index 1c08b35f..f182a54b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1717,4 +1717,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1733,4 +1733,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getHandle().openBook(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(book), net.minecraft.server.EnumHand.MAIN_HAND);
          getInventory().setItemInMainHand(hand);
      }
@@ -142,7 +142,7 @@ index c50e2ae00..265890326 100644
 +    // Spigot end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 6a044c345..d32afdd96 100644
+index 6a044c34..d32afdd9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -284,6 +284,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
@@ -170,5 +170,5 @@ index 6a044c345..d32afdd96 100644
 +    // Spigot end
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

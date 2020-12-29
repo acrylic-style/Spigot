@@ -1,4 +1,4 @@
-From 1a85297251edc9df3ecbae87373aa37bc2ce56db Mon Sep 17 00:00:00 2001
+From d6e425e9ece3ef22056e8c932cc5a1026e87ba7c Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Mon, 28 Jul 2014 16:55:51 +1000
 Subject: [PATCH] Allow Attribute Capping.
@@ -6,20 +6,41 @@ Subject: [PATCH] Allow Attribute Capping.
 Apply some sensible defaults and allow server owners to customize the maximum values of selected common attributes.
 
 diff --git a/src/main/java/net/minecraft/server/AttributeRanged.java b/src/main/java/net/minecraft/server/AttributeRanged.java
-index 13d9bb19b..b1ffe01b4 100644
---- a/src/main/java/net/minecraft/server/AttributeRanged.java
+new file mode 100644
+index 00000000..b1ffe01b
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/AttributeRanged.java
-@@ -3,7 +3,7 @@ package net.minecraft.server;
- public class AttributeRanged extends AttributeBase {
- 
-     private final double a;
--    public final double maximum;
+@@ -0,0 +1,28 @@
++package net.minecraft.server;
++
++public class AttributeRanged extends AttributeBase {
++
++    private final double a;
 +    public double maximum; // Spigot
- 
-     public AttributeRanged(String s, double d0, double d1, double d2) {
-         super(s, d0);
++
++    public AttributeRanged(String s, double d0, double d1, double d2) {
++        super(s, d0);
++        this.a = d1;
++        this.maximum = d2;
++        if (d1 > d2) {
++            throw new IllegalArgumentException("Minimum value cannot be bigger than maximum value!");
++        } else if (d0 < d1) {
++            throw new IllegalArgumentException("Default value cannot be lower than minimum value!");
++        } else if (d0 > d2) {
++            throw new IllegalArgumentException("Default value cannot be bigger than maximum value!");
++        }
++    }
++
++    @Override
++    public double a(double d0) {
++        if (d0 != d0) return getDefault(); // CraftBukkit
++
++        d0 = MathHelper.a(d0, this.a, this.maximum);
++        return d0;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/GenericAttributes.java b/src/main/java/net/minecraft/server/GenericAttributes.java
-index 67365b99f..9913fb4fa 100644
+index 67365b99..9913fb4f 100644
 --- a/src/main/java/net/minecraft/server/GenericAttributes.java
 +++ b/src/main/java/net/minecraft/server/GenericAttributes.java
 @@ -2,12 +2,12 @@ package net.minecraft.server;
@@ -39,7 +60,7 @@ index 67365b99f..9913fb4fa 100644
      public static final AttributeBase ATTACK_SPEED = a("generic.attack_speed", (new AttributeRanged("attribute.name.generic.attack_speed", 4.0D, 0.0D, 1024.0D)).a(true));
      public static final AttributeBase ARMOR = a("generic.armor", (new AttributeRanged("attribute.name.generic.armor", 0.0D, 0.0D, 30.0D)).a(true));
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 5d37f976d..eb975a3c9 100644
+index ec6d9688..33abede1 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -13,6 +13,8 @@ import java.util.List;
@@ -70,5 +91,5 @@ index 5d37f976d..eb975a3c9 100644
 +    }
  }
 -- 
-2.25.1
+2.21.0.windows.1
 

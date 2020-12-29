@@ -1,4 +1,4 @@
-From 89ca440d0e022edc8fdb331a7065540e1bd5d3b3 Mon Sep 17 00:00:00 2001
+From 9b81f09585576c2fd5795f057fb85bac1a1c9820 Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Sun, 13 Apr 2014 14:41:23 +1000
 Subject: [PATCH] Use Offline Player Data Once if Required.
@@ -6,13 +6,59 @@ Subject: [PATCH] Use Offline Player Data Once if Required.
 If we are online mode and the only copy of player data we can find is the player's offline mode data, we will attempt a once off conversion by reading this data and then renaming the file so it won't be used again.
 
 diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-index bb9694c9e..9190e7c6d 100644
---- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
+new file mode 100644
+index 00000000..9190e7c6
+--- /dev/null
 +++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
-@@ -46,10 +46,28 @@ public class WorldNBTStorage {
- 
-         try {
-             File file = new File(this.playerDir, entityhuman.getUniqueIDString() + ".dat");
+@@ -0,0 +1,131 @@
++package net.minecraft.server;
++
++import com.mojang.datafixers.DataFixer;
++import java.io.File;
++import javax.annotation.Nullable;
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++
++// CraftBukkit start
++import java.io.FileInputStream;
++import java.io.InputStream;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++// CraftBukkit end
++
++public class WorldNBTStorage {
++
++    private static final Logger LOGGER = LogManager.getLogger();
++    private final File playerDir;
++    protected final DataFixer a;
++
++    public WorldNBTStorage(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer) {
++        this.a = datafixer;
++        this.playerDir = convertable_conversionsession.getWorldFolder(SavedFile.PLAYERDATA).toFile();
++        this.playerDir.mkdirs();
++    }
++
++    public void save(EntityHuman entityhuman) {
++        try {
++            NBTTagCompound nbttagcompound = entityhuman.save(new NBTTagCompound());
++            File file = File.createTempFile(entityhuman.getUniqueIDString() + "-", ".dat", this.playerDir);
++
++            NBTCompressedStreamTools.a(nbttagcompound, file);
++            File file1 = new File(this.playerDir, entityhuman.getUniqueIDString() + ".dat");
++            File file2 = new File(this.playerDir, entityhuman.getUniqueIDString() + ".dat_old");
++
++            SystemUtils.a(file1, file, file2);
++        } catch (Exception exception) {
++            WorldNBTStorage.LOGGER.warn("Failed to save player data for {}", entityhuman.getDisplayName().getString());
++        }
++
++    }
++
++    @Nullable
++    public NBTTagCompound load(EntityHuman entityhuman) {
++        NBTTagCompound nbttagcompound = null;
++
++        try {
++            File file = new File(this.playerDir, entityhuman.getUniqueIDString() + ".dat");
 +            // Spigot Start
 +            boolean usingWrongFile = false;
 +            if ( !file.exists() )
@@ -25,19 +71,77 @@ index bb9694c9e..9190e7c6d 100644
 +                }
 +            }
 +            // Spigot End
- 
-             if (file.exists() && file.isFile()) {
-                 nbttagcompound = NBTCompressedStreamTools.a(file);
-             }
++
++            if (file.exists() && file.isFile()) {
++                nbttagcompound = NBTCompressedStreamTools.a(file);
++            }
 +            // Spigot Start
 +            if ( usingWrongFile )
 +            {
 +                file.renameTo( new File( file.getPath() + ".offline-read" ) );
 +            }
 +            // Spigot End
-         } catch (Exception exception) {
-             WorldNBTStorage.LOGGER.warn("Failed to load player data for {}", entityhuman.getDisplayName().getString());
-         }
++        } catch (Exception exception) {
++            WorldNBTStorage.LOGGER.warn("Failed to load player data for {}", entityhuman.getDisplayName().getString());
++        }
++
++        if (nbttagcompound != null) {
++            // CraftBukkit start
++            if (entityhuman instanceof EntityPlayer) {
++                CraftPlayer player = (CraftPlayer) entityhuman.getBukkitEntity();
++                // Only update first played if it is older than the one we have
++                long modified = new File(this.playerDir, entityhuman.getUniqueID().toString() + ".dat").lastModified();
++                if (modified < player.getFirstPlayed()) {
++                    player.setFirstPlayed(modified);
++                }
++            }
++            // CraftBukkit end
++            int i = nbttagcompound.hasKeyOfType("DataVersion", 3) ? nbttagcompound.getInt("DataVersion") : -1;
++
++            entityhuman.load(GameProfileSerializer.a(this.a, DataFixTypes.PLAYER, nbttagcompound, i));
++        }
++
++        return nbttagcompound;
++    }
++
++    // CraftBukkit start
++    public NBTTagCompound getPlayerData(String s) {
++        try {
++            File file1 = new File(this.playerDir, s + ".dat");
++
++            if (file1.exists()) {
++                return NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
++            }
++        } catch (Exception exception) {
++            LOGGER.warn("Failed to load player data for " + s);
++        }
++
++        return null;
++    }
++    // CraftBukkit end
++
++    public String[] getSeenPlayers() {
++        String[] astring = this.playerDir.list();
++
++        if (astring == null) {
++            astring = new String[0];
++        }
++
++        for (int i = 0; i < astring.length; ++i) {
++            if (astring[i].endsWith(".dat")) {
++                astring[i] = astring[i].substring(0, astring[i].length() - 4);
++            }
++        }
++
++        return astring;
++    }
++
++    // CraftBukkit start
++    public File getPlayerDir() {
++        return playerDir;
++    }
++    // CraftBukkit end
++}
 -- 
-2.25.1
+2.21.0.windows.1
 

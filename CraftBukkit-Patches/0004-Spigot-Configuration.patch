@@ -1,57 +1,12 @@
-From 34e3f3393ade61875de6a7ef5672291fc3cf080b Mon Sep 17 00:00:00 2001
+From b6ffeacf2f48335d6dbf75c17593d614b63832cf Mon Sep 17 00:00:00 2001
 From: md_5 <md_5@live.com.au>
 Date: Sun, 7 Jul 2013 09:32:53 +1000
 Subject: [PATCH] Spigot Configuration
 
 Provides the basic infrastructure to load and save the Spigot configuration file, spigot.yml
 
-diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index f128b7a01..80bfb9e8f 100644
---- a/src/main/java/net/minecraft/server/DedicatedServer.java
-+++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -142,6 +142,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             this.e(dedicatedserverproperties.preventProxyConnections);
-             this.a_(dedicatedserverproperties.serverIp);
-         }
-+        // Spigot start
-+        this.a((PlayerList) (new DedicatedPlayerList(this, this.customRegistry, this.worldNBTStorage)));
-+        org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
-+        org.spigotmc.SpigotConfig.registerCommands();
-+        // Spigot end
- 
-         this.setPVP(dedicatedserverproperties.pvp);
-         this.setAllowFlight(dedicatedserverproperties.allowFlight);
-@@ -175,7 +180,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         }
- 
-         // CraftBukkit start
--        this.a((PlayerList) (new DedicatedPlayerList(this, this.customRegistry, this.worldNBTStorage)));
-+        // this.a((PlayerList) (new DedicatedPlayerList(this, this.customRegistry, this.worldNBTStorage))); // Spigot - moved up
-         server.loadPlugins();
-         server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
-         // CraftBukkit end
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index da712f961..30b817246 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -74,6 +74,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     public long ticksPerWaterAmbientSpawns;
-     public long ticksPerAmbientSpawns;
-     public boolean populating;
-+    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
- 
-     public CraftWorld getWorld() {
-         return this.world;
-@@ -88,6 +89,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     }
- 
-     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-+        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
-         this.generator = gen;
-         this.world = new CraftWorld((WorldServer) this, gen, env);
-         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d5c6ecac9..d02ba6180 100644
+index ea2b5013..733c8493 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -782,6 +782,7 @@ public final class CraftServer implements Server {
@@ -78,7 +33,7 @@ index d5c6ecac9..d02ba6180 100644
          ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 17b9475b2..8a8234199 100644
+index cf86959d..60ede744 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -121,6 +121,14 @@ public class Main {
@@ -98,7 +53,7 @@ index 17b9475b2..8a8234199 100644
  
 diff --git a/src/main/java/org/spigotmc/SpigotCommand.java b/src/main/java/org/spigotmc/SpigotCommand.java
 new file mode 100644
-index 000000000..d0be3c3b5
+index 00000000..d0be3c3b
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotCommand.java
 @@ -0,0 +1,44 @@
@@ -148,7 +103,7 @@ index 000000000..d0be3c3b5
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 new file mode 100644
-index 000000000..7b14d3164
+index 00000000..7b14d316
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -0,0 +1,140 @@
@@ -294,7 +249,7 @@ index 000000000..7b14d3164
 +}
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 new file mode 100644
-index 000000000..1cce14866
+index 00000000..1cce1486
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -0,0 +1,82 @@
@@ -381,5 +336,5 @@ index 000000000..1cce14866
 +    }
 +}
 -- 
-2.25.1
+2.21.0.windows.1
 

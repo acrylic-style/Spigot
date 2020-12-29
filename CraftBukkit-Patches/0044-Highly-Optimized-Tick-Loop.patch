@@ -1,14 +1,14 @@
-From edc0fe0e417bc18f7ded055e7ffc7053f2a6b086 Mon Sep 17 00:00:00 2001
+From 433ee2e3e1ad5fcc89cc30d3feb23ab391a7450f Mon Sep 17 00:00:00 2001
 From: md_5 <git@md-5.net>
 Date: Thu, 26 Jan 2017 21:50:51 +0000
 Subject: [PATCH] Highly Optimized Tick Loop
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 23a5fbcc3..e87e19490 100644
+index f18bf327..b18a9763 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -149,6 +149,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -147,6 +147,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public CommandDispatcher vanillaCommandDispatcher;
      private boolean forceTicks;
      // CraftBukkit end
@@ -21,7 +21,7 @@ index 23a5fbcc3..e87e19490 100644
  
      public static <S extends MinecraftServer> S a(Function<Thread, S> function) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -783,6 +789,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -777,6 +783,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      }
  
@@ -35,7 +35,7 @@ index 23a5fbcc3..e87e19490 100644
      protected void w() {
          try {
              if (this.init()) {
-@@ -791,8 +804,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -785,8 +798,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.serverPing.setServerInfo(new ServerPing.ServerData(SharedConstants.getGameVersion().getName(), SharedConstants.getGameVersion().getProtocolVersion()));
                  this.a(this.serverPing);
  
@@ -48,7 +48,7 @@ index 23a5fbcc3..e87e19490 100644
  
                      if (i > 5000L && this.nextTick - this.lastOverloadTime >= 30000L) { // CraftBukkit
                          long j = i / 50L;
-@@ -803,6 +819,16 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -797,6 +813,16 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                          this.lastOverloadTime = this.nextTick;
                      }
  
@@ -66,7 +66,7 @@ index 23a5fbcc3..e87e19490 100644
                      this.nextTick += 50L;
                      GameProfilerTick gameprofilertick = GameProfilerTick.a("Server");
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 7f42259e6..d97bc8a3f 100644
+index 0653d7a8..25b57a39 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -266,4 +266,9 @@ public class SpigotConfig
@@ -81,7 +81,7 @@ index 7f42259e6..d97bc8a3f 100644
  }
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 new file mode 100644
-index 000000000..9cd57c9d5
+index 00000000..9cd57c9d
 --- /dev/null
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -0,0 +1,47 @@
@@ -133,5 +133,5 @@ index 000000000..9cd57c9d5
 +    }
 +}
 -- 
-2.25.1
+2.21.0.windows.1
 
